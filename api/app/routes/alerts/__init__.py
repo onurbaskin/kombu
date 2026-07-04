@@ -1,0 +1,1 @@
+"""Alerts route package."""

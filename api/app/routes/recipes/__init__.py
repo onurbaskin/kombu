@@ -1,0 +1,1 @@
+"""Recipes route package."""

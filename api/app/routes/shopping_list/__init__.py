@@ -1,0 +1,1 @@
+"""Shopping list route package."""
