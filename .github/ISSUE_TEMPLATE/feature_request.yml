@@ -1,0 +1,19 @@
+name: Feature request
+description: Suggest an improvement for Kombu.
+title: "[Feature]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What kitchen or self-hosting workflow should this improve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: What would you like Kombu to do?
+    validations:
+      required: true
