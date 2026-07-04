@@ -4,1465 +4,1465 @@
  */
 
 export interface paths {
-    "/api/v1/ai/capabilities": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Capabilities
-         * @description Return AI capabilities for the current deployment.
-         */
-        get: operations["capabilities_api_v1_ai_capabilities_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+  "/api/v1/ai/capabilities": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/ai/suggestions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        /**
-         * Suggest
-         * @description Create a provider-free AI suggestion record.
-         */
-        post: operations["suggest_api_v1_ai_suggestions_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Capabilities
+     * @description Return AI capabilities for the current deployment.
+     */
+    get: operations["capabilities_api_v1_ai_capabilities_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/ai/suggestions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/alerts/expiry": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Expiry
-         * @description Return inventory expiry alerts.
-         */
-        get: operations["expiry_api_v1_alerts_expiry_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    /**
+     * Suggest
+     * @description Create a provider-free AI suggestion record.
+     */
+    post: operations["suggest_api_v1_ai_suggestions_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/alerts/expiry": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/imports/jobs": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Jobs
-         * @description Return import jobs.
-         */
-        get: operations["jobs_api_v1_imports_jobs_get"];
-        put?: never;
-        /**
-         * Create Job
-         * @description Create an import job.
-         */
-        post: operations["create_job_api_v1_imports_jobs_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Expiry
+     * @description Return inventory expiry alerts.
+     */
+    get: operations["expiry_api_v1_alerts_expiry_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/imports/jobs": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/imports/sources": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Sources
-         * @description Return supported import source types.
-         */
-        get: operations["sources_api_v1_imports_sources_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Jobs
+     * @description Return import jobs.
+     */
+    get: operations["jobs_api_v1_imports_jobs_get"];
+    put?: never;
+    /**
+     * Create Job
+     * @description Create an import job.
+     */
+    post: operations["create_job_api_v1_imports_jobs_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/imports/sources": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/inventory": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Index
-         * @description List tracked inventory items.
-         */
-        get: operations["index_api_v1_inventory_get"];
-        put?: never;
-        /**
-         * Create
-         * @description Create a tracked inventory item.
-         */
-        post: operations["create_api_v1_inventory_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Sources
+     * @description Return supported import source types.
+     */
+    get: operations["sources_api_v1_imports_sources_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/inventory": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/recipes": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Index
-         * @description List recipes stored in Kombu.
-         */
-        get: operations["index_api_v1_recipes_get"];
-        put?: never;
-        /**
-         * Create
-         * @description Create a recipe.
-         */
-        post: operations["create_api_v1_recipes_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Index
+     * @description List tracked inventory items.
+     */
+    get: operations["index_api_v1_inventory_get"];
+    put?: never;
+    /**
+     * Create
+     * @description Create a tracked inventory item.
+     */
+    post: operations["create_api_v1_inventory_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/recipes": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/recipes/{recipe_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Show
-         * @description Return one recipe.
-         */
-        get: operations["show_api_v1_recipes__recipe_id__get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Index
+     * @description List recipes stored in Kombu.
+     */
+    get: operations["index_api_v1_recipes_get"];
+    put?: never;
+    /**
+     * Create
+     * @description Create a recipe.
+     */
+    post: operations["create_api_v1_recipes_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/recipes/{recipe_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/scanner/capabilities": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Capabilities
-         * @description Return supported scanner workflows.
-         */
-        get: operations["capabilities_api_v1_scanner_capabilities_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Show
+     * @description Return one recipe.
+     */
+    get: operations["show_api_v1_recipes__recipe_id__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/scanner/capabilities": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/scanner/sessions": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Sessions
-         * @description Return scanner sessions.
-         */
-        get: operations["sessions_api_v1_scanner_sessions_get"];
-        put?: never;
-        /**
-         * Create Session
-         * @description Create a scanner session.
-         */
-        post: operations["create_session_api_v1_scanner_sessions_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Capabilities
+     * @description Return supported scanner workflows.
+     */
+    get: operations["capabilities_api_v1_scanner_capabilities_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/scanner/sessions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/shopping-list": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Index
-         * @description List shopping list items.
-         */
-        get: operations["index_api_v1_shopping_list_get"];
-        put?: never;
-        /**
-         * Create
-         * @description Create a shopping list item.
-         */
-        post: operations["create_api_v1_shopping_list_post"];
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Sessions
+     * @description Return scanner sessions.
+     */
+    get: operations["sessions_api_v1_scanner_sessions_get"];
+    put?: never;
+    /**
+     * Create Session
+     * @description Create a scanner session.
+     */
+    post: operations["create_session_api_v1_scanner_sessions_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/shopping-list": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/shopping-list/{item_id}": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        get?: never;
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        /**
-         * Update
-         * @description Update a shopping list item.
-         */
-        patch: operations["update_api_v1_shopping_list__item_id__patch"];
-        trace?: never;
+    /**
+     * Index
+     * @description List shopping list items.
+     */
+    get: operations["index_api_v1_shopping_list_get"];
+    put?: never;
+    /**
+     * Create
+     * @description Create a shopping list item.
+     */
+    post: operations["create_api_v1_shopping_list_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/shopping-list/{item_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/system/overview": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Overview
-         * @description Return initial dashboard data for the frontend.
-         */
-        get: operations["overview_api_v1_system_overview_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    get?: never;
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    /**
+     * Update
+     * @description Update a shopping list item.
+     */
+    patch: operations["update_api_v1_shopping_list__item_id__patch"];
+    trace?: never;
+  };
+  "/api/v1/system/overview": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/system/readiness": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Readiness
-         * @description Return readiness for dependency-aware checks.
-         */
-        get: operations["readiness_api_v1_system_readiness_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Overview
+     * @description Return initial dashboard data for the frontend.
+     */
+    get: operations["overview_api_v1_system_overview_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/system/readiness": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/api/v1/users/me": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Me
-         * @description Return the current user placeholder until auth is configured.
-         */
-        get: operations["me_api_v1_users_me_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Readiness
+     * @description Return readiness for dependency-aware checks.
+     */
+    get: operations["readiness_api_v1_system_readiness_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/users/me": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    "/healthz": {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        /**
-         * Healthz
-         * @description Return a lightweight liveness check.
-         */
-        get: operations["healthz_healthz_get"];
-        put?: never;
-        post?: never;
-        delete?: never;
-        options?: never;
-        head?: never;
-        patch?: never;
-        trace?: never;
+    /**
+     * Me
+     * @description Return the current user placeholder until auth is configured.
+     */
+    get: operations["me_api_v1_users_me_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/healthz": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
+    /**
+     * Healthz
+     * @description Return a lightweight liveness check.
+     */
+    get: operations["healthz_healthz_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
 }
 export type webhooks = Record<string, never>;
 export interface components {
-    schemas: {
-        /**
-         * AiCapabilityRead
-         * @description AI capability exposed without vendor-specific credentials.
-         */
-        AiCapabilityRead: {
-            /** Description */
-            description: string;
-            /** Enabled */
-            enabled: boolean;
-            /** Key */
-            key: string;
-            /** Label */
-            label: string;
-        };
-        /**
-         * AiSuggestionCreate
-         * @description AI suggestion request.
-         */
-        AiSuggestionCreate: {
-            /** Context */
-            context?: string | null;
-            /** Prompt */
-            prompt: string;
-        };
-        /**
-         * AiSuggestionRead
-         * @description AI suggestion response.
-         */
-        AiSuggestionRead: {
-            /** Context */
-            context: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Id */
-            id: number;
-            /** Prompt */
-            prompt: string;
-            /** Suggestion */
-            suggestion: string;
-        };
-        /**
-         * CurrentUserRead
-         * @description Current user bootstrap response.
-         */
-        CurrentUserRead: {
-            /** Auth Provider */
-            auth_provider: string;
-            /** Display Name */
-            display_name: string;
-            /** Email */
-            email: string;
-            /** Id */
-            id: string;
-            /** Permissions */
-            permissions: string[];
-            /** Role */
-            role: string;
-        };
-        /**
-         * ExpiryAlertRead
-         * @description Expiry alert response for an inventory item.
-         */
-        ExpiryAlertRead: {
-            /** Days Until Expiry */
-            days_until_expiry: number;
-            /**
-             * Expires On
-             * Format: date
-             */
-            expires_on: string;
-            /** Item Id */
-            item_id: number;
-            location: components["schemas"]["InventoryLocation"];
-            /** Name */
-            name: string;
-            /** Severity */
-            severity: string;
-        };
-        /**
-         * FeatureFlag
-         * @description Feature availability shown to the frontend.
-         */
-        FeatureFlag: {
-            /** Description */
-            description: string;
-            /** Enabled */
-            enabled: boolean;
-            /** Key */
-            key: string;
-            /** Label */
-            label: string;
-        };
-        /** HTTPValidationError */
-        HTTPValidationError: {
-            /** Detail */
-            detail?: components["schemas"]["ValidationError"][];
-        };
-        /**
-         * HealthRead
-         * @description Public liveness response.
-         */
-        HealthRead: {
-            /** Service */
-            service: string;
-            /** Status */
-            status: string;
-            /** Version */
-            version: string;
-        };
-        /**
-         * ImportJobCreate
-         * @description Import job creation request.
-         */
-        ImportJobCreate: {
-            /** Source Name */
-            source_name: string;
-            /** Source Type */
-            source_type: string;
-        };
-        /**
-         * ImportJobRead
-         * @description Import job response.
-         */
-        ImportJobRead: {
-            /** Completed At */
-            completed_at: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Error Message */
-            error_message: string | null;
-            /** Id */
-            id: number;
-            /** Imported Records */
-            imported_records: number;
-            /** Source Name */
-            source_name: string;
-            /** Source Type */
-            source_type: string;
-            status: components["schemas"]["ImportJobStatus"];
-            /** Total Records */
-            total_records: number;
-        };
-        /**
-         * ImportJobStatus
-         * @description Lifecycle states for recipe import jobs.
-         * @enum {string}
-         */
-        ImportJobStatus: "queued" | "running" | "completed" | "failed";
-        /**
-         * ImportSourceRead
-         * @description Import source that Kombu can prepare for users.
-         */
-        ImportSourceRead: {
-            /** Description */
-            description: string;
-            /** Key */
-            key: string;
-            /** Label */
-            label: string;
-            /** Ready For Import */
-            ready_for_import: boolean;
-            /** Source Type */
-            source_type: string;
-        };
-        /**
-         * InventoryItemCreate
-         * @description Inventory item creation request.
-         */
-        InventoryItemCreate: {
-            /** Expires On */
-            expires_on?: string | null;
-            /** @default pantry */
-            location: components["schemas"]["InventoryLocation"];
-            /** Name */
-            name: string;
-            /** Notes */
-            notes?: string | null;
-            /** Opened On */
-            opened_on?: string | null;
-            /**
-             * Quantity
-             * @default 1
-             */
-            quantity: number;
-            /** Source */
-            source?: string | null;
-            /** Unit */
-            unit?: string | null;
-        };
-        /**
-         * InventoryItemRead
-         * @description Inventory item response.
-         */
-        InventoryItemRead: {
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Expires On */
-            expires_on?: string | null;
-            /** Id */
-            id: number;
-            /** @default pantry */
-            location: components["schemas"]["InventoryLocation"];
-            /** Name */
-            name: string;
-            /** Notes */
-            notes?: string | null;
-            /** Opened On */
-            opened_on?: string | null;
-            /**
-             * Quantity
-             * @default 1
-             */
-            quantity: number;
-            /** Source */
-            source?: string | null;
-            /** Unit */
-            unit?: string | null;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /**
-         * InventoryLocation
-         * @description Common locations where inventory items can be stored.
-         * @enum {string}
-         */
-        InventoryLocation: "pantry" | "fridge" | "freezer" | "counter" | "other";
-        /**
-         * NavigationItem
-         * @description Frontend navigation item provided by the API.
-         */
-        NavigationItem: {
-            /** Href */
-            href: string;
-            /** Label */
-            label: string;
-            /** Section */
-            section: string;
-        };
-        /**
-         * OverviewMetric
-         * @description Dashboard metric for the system overview.
-         */
-        OverviewMetric: {
-            /** Description */
-            description: string;
-            /** Key */
-            key: string;
-            /** Label */
-            label: string;
-            /** Value */
-            value: number;
-        };
-        /**
-         * ReadinessRead
-         * @description Readiness result for services that need dependencies.
-         */
-        ReadinessRead: {
-            /** Database */
-            database: string;
-            /** Status */
-            status: string;
-        };
-        /**
-         * RecipeCreate
-         * @description Recipe creation request.
-         */
-        RecipeCreate: {
-            /** Cook Minutes */
-            cook_minutes?: number | null;
-            /** Cuisine */
-            cuisine?: string | null;
-            /** Ingredients */
-            ingredients?: components["schemas"]["RecipeIngredientCreate"][];
-            /**
-             * Is Favorite
-             * @default false
-             */
-            is_favorite: boolean;
-            /** Prep Minutes */
-            prep_minutes?: number | null;
-            /** @default user */
-            source_type: components["schemas"]["RecipeSourceType"];
-            /** Source Url */
-            source_url?: string | null;
-            /** Summary */
-            summary?: string | null;
-            /** Title */
-            title: string;
-            /** Yield Servings */
-            yield_servings?: number | null;
-        };
-        /**
-         * RecipeIngredientCreate
-         * @description Ingredient input for recipe creation.
-         */
-        RecipeIngredientCreate: {
-            /** Name */
-            name: string;
-            /** Note */
-            note?: string | null;
-            /** Quantity */
-            quantity?: number | null;
-            /** Unit */
-            unit?: string | null;
-        };
-        /**
-         * RecipeIngredientRead
-         * @description Ingredient response for stored recipes.
-         */
-        RecipeIngredientRead: {
-            /** Id */
-            id: number;
-            /** Name */
-            name: string;
-            /** Note */
-            note?: string | null;
-            /** Position */
-            position: number;
-            /** Quantity */
-            quantity?: number | null;
-            /** Unit */
-            unit?: string | null;
-        };
-        /**
-         * RecipeRead
-         * @description Recipe response with ingredients.
-         */
-        RecipeRead: {
-            /** Cook Minutes */
-            cook_minutes: number | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Cuisine */
-            cuisine: string | null;
-            /** Id */
-            id: number;
-            /** Ingredients */
-            ingredients: components["schemas"]["RecipeIngredientRead"][];
-            /** Is Favorite */
-            is_favorite: boolean;
-            /** Prep Minutes */
-            prep_minutes: number | null;
-            source_type: components["schemas"]["RecipeSourceType"];
-            /** Source Url */
-            source_url: string | null;
-            /** Summary */
-            summary: string | null;
-            /** Title */
-            title: string;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-            /** Yield Servings */
-            yield_servings: number | null;
-        };
-        /**
-         * RecipeSourceType
-         * @description Where a recipe originated before it was stored in Kombu.
-         * @enum {string}
-         */
-        RecipeSourceType: "user" | "import" | "web" | "ai";
-        /**
-         * ScanSessionCreate
-         * @description Scan session creation request.
-         */
-        ScanSessionCreate: {
-            /** Device Hint */
-            device_hint?: string | null;
-            /** Raw Payload */
-            raw_payload?: string | null;
-            /** Scan Type */
-            scan_type: string;
-        };
-        /**
-         * ScanSessionRead
-         * @description Scan session response.
-         */
-        ScanSessionRead: {
-            /** Completed At */
-            completed_at: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Device Hint */
-            device_hint: string | null;
-            /** Id */
-            id: number;
-            /** Raw Payload */
-            raw_payload: string | null;
-            /** Result Summary */
-            result_summary: string | null;
-            /** Scan Type */
-            scan_type: string;
-            status: components["schemas"]["ScanSessionStatus"];
-        };
-        /**
-         * ScanSessionStatus
-         * @description Lifecycle states for scanner capture sessions.
-         * @enum {string}
-         */
-        ScanSessionStatus: "created" | "processing" | "completed" | "failed";
-        /**
-         * ScannerCapabilityRead
-         * @description Scanner capability response.
-         */
-        ScannerCapabilityRead: {
-            /** Description */
-            description: string;
-            /** Key */
-            key: string;
-            /** Label */
-            label: string;
-            /** Requires Hardware */
-            requires_hardware: boolean;
-        };
-        /**
-         * ShoppingItemStatus
-         * @description Lifecycle states for a shopping list item.
-         * @enum {string}
-         */
-        ShoppingItemStatus: "needed" | "purchased";
-        /**
-         * ShoppingListItemCreate
-         * @description Shopping list item creation request.
-         */
-        ShoppingListItemCreate: {
-            /** Category */
-            category?: string | null;
-            /** Linked Inventory Item Id */
-            linked_inventory_item_id?: number | null;
-            /** Name */
-            name: string;
-            /**
-             * Quantity
-             * @default 1
-             */
-            quantity: number;
-            /** Recipe Id */
-            recipe_id?: number | null;
-            /** @default needed */
-            status: components["schemas"]["ShoppingItemStatus"];
-            /** Unit */
-            unit?: string | null;
-        };
-        /**
-         * ShoppingListItemRead
-         * @description Shopping list item response.
-         */
-        ShoppingListItemRead: {
-            /** Category */
-            category?: string | null;
-            /**
-             * Created At
-             * Format: date-time
-             */
-            created_at: string;
-            /** Id */
-            id: number;
-            /** Linked Inventory Item Id */
-            linked_inventory_item_id?: number | null;
-            /** Name */
-            name: string;
-            /**
-             * Quantity
-             * @default 1
-             */
-            quantity: number;
-            /** Recipe Id */
-            recipe_id?: number | null;
-            /** @default needed */
-            status: components["schemas"]["ShoppingItemStatus"];
-            /** Unit */
-            unit?: string | null;
-            /**
-             * Updated At
-             * Format: date-time
-             */
-            updated_at: string;
-        };
-        /**
-         * ShoppingListItemUpdate
-         * @description Partial shopping list item update request.
-         */
-        ShoppingListItemUpdate: {
-            /** Category */
-            category?: string | null;
-            /** Quantity */
-            quantity?: number | null;
-            status?: components["schemas"]["ShoppingItemStatus"] | null;
-            /** Unit */
-            unit?: string | null;
-        };
-        /**
-         * SystemOverviewRead
-         * @description Initial dashboard payload for Kombu.
-         */
-        SystemOverviewRead: {
-            /** App Name */
-            app_name: string;
-            /** Environment */
-            environment: string;
-            /** Features */
-            features: components["schemas"]["FeatureFlag"][];
-            /** Metrics */
-            metrics: components["schemas"]["OverviewMetric"][];
-            /** Navigation */
-            navigation: components["schemas"]["NavigationItem"][];
-        };
-        /** ValidationError */
-        ValidationError: {
-            /** Context */
-            ctx?: Record<string, never>;
-            /** Input */
-            input?: unknown;
-            /** Location */
-            loc: (string | number)[];
-            /** Message */
-            msg: string;
-            /** Error Type */
-            type: string;
-        };
+  schemas: {
+    /**
+     * AiCapabilityRead
+     * @description AI capability exposed without vendor-specific credentials.
+     */
+    AiCapabilityRead: {
+      /** Description */
+      description: string;
+      /** Enabled */
+      enabled: boolean;
+      /** Key */
+      key: string;
+      /** Label */
+      label: string;
     };
-    responses: never;
-    parameters: never;
-    requestBodies: never;
-    headers: never;
-    pathItems: never;
+    /**
+     * AiSuggestionCreate
+     * @description AI suggestion request.
+     */
+    AiSuggestionCreate: {
+      /** Context */
+      context?: string | null;
+      /** Prompt */
+      prompt: string;
+    };
+    /**
+     * AiSuggestionRead
+     * @description AI suggestion response.
+     */
+    AiSuggestionRead: {
+      /** Context */
+      context: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Id */
+      id: number;
+      /** Prompt */
+      prompt: string;
+      /** Suggestion */
+      suggestion: string;
+    };
+    /**
+     * CurrentUserRead
+     * @description Current user bootstrap response.
+     */
+    CurrentUserRead: {
+      /** Auth Provider */
+      auth_provider: string;
+      /** Display Name */
+      display_name: string;
+      /** Email */
+      email: string;
+      /** Id */
+      id: string;
+      /** Permissions */
+      permissions: string[];
+      /** Role */
+      role: string;
+    };
+    /**
+     * ExpiryAlertRead
+     * @description Expiry alert response for an inventory item.
+     */
+    ExpiryAlertRead: {
+      /** Days Until Expiry */
+      days_until_expiry: number;
+      /**
+       * Expires On
+       * Format: date
+       */
+      expires_on: string;
+      /** Item Id */
+      item_id: number;
+      location: components["schemas"]["InventoryLocation"];
+      /** Name */
+      name: string;
+      /** Severity */
+      severity: string;
+    };
+    /**
+     * FeatureFlag
+     * @description Feature availability shown to the frontend.
+     */
+    FeatureFlag: {
+      /** Description */
+      description: string;
+      /** Enabled */
+      enabled: boolean;
+      /** Key */
+      key: string;
+      /** Label */
+      label: string;
+    };
+    /** HTTPValidationError */
+    HTTPValidationError: {
+      /** Detail */
+      detail?: components["schemas"]["ValidationError"][];
+    };
+    /**
+     * HealthRead
+     * @description Public liveness response.
+     */
+    HealthRead: {
+      /** Service */
+      service: string;
+      /** Status */
+      status: string;
+      /** Version */
+      version: string;
+    };
+    /**
+     * ImportJobCreate
+     * @description Import job creation request.
+     */
+    ImportJobCreate: {
+      /** Source Name */
+      source_name: string;
+      /** Source Type */
+      source_type: string;
+    };
+    /**
+     * ImportJobRead
+     * @description Import job response.
+     */
+    ImportJobRead: {
+      /** Completed At */
+      completed_at: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Error Message */
+      error_message: string | null;
+      /** Id */
+      id: number;
+      /** Imported Records */
+      imported_records: number;
+      /** Source Name */
+      source_name: string;
+      /** Source Type */
+      source_type: string;
+      status: components["schemas"]["ImportJobStatus"];
+      /** Total Records */
+      total_records: number;
+    };
+    /**
+     * ImportJobStatus
+     * @description Lifecycle states for recipe import jobs.
+     * @enum {string}
+     */
+    ImportJobStatus: "queued" | "running" | "completed" | "failed";
+    /**
+     * ImportSourceRead
+     * @description Import source that Kombu can prepare for users.
+     */
+    ImportSourceRead: {
+      /** Description */
+      description: string;
+      /** Key */
+      key: string;
+      /** Label */
+      label: string;
+      /** Ready For Import */
+      ready_for_import: boolean;
+      /** Source Type */
+      source_type: string;
+    };
+    /**
+     * InventoryItemCreate
+     * @description Inventory item creation request.
+     */
+    InventoryItemCreate: {
+      /** Expires On */
+      expires_on?: string | null;
+      /** @default pantry */
+      location: components["schemas"]["InventoryLocation"];
+      /** Name */
+      name: string;
+      /** Notes */
+      notes?: string | null;
+      /** Opened On */
+      opened_on?: string | null;
+      /**
+       * Quantity
+       * @default 1
+       */
+      quantity: number;
+      /** Source */
+      source?: string | null;
+      /** Unit */
+      unit?: string | null;
+    };
+    /**
+     * InventoryItemRead
+     * @description Inventory item response.
+     */
+    InventoryItemRead: {
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Expires On */
+      expires_on?: string | null;
+      /** Id */
+      id: number;
+      /** @default pantry */
+      location: components["schemas"]["InventoryLocation"];
+      /** Name */
+      name: string;
+      /** Notes */
+      notes?: string | null;
+      /** Opened On */
+      opened_on?: string | null;
+      /**
+       * Quantity
+       * @default 1
+       */
+      quantity: number;
+      /** Source */
+      source?: string | null;
+      /** Unit */
+      unit?: string | null;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+    };
+    /**
+     * InventoryLocation
+     * @description Common locations where inventory items can be stored.
+     * @enum {string}
+     */
+    InventoryLocation: "pantry" | "fridge" | "freezer" | "counter" | "other";
+    /**
+     * NavigationItem
+     * @description Frontend navigation item provided by the API.
+     */
+    NavigationItem: {
+      /** Href */
+      href: string;
+      /** Label */
+      label: string;
+      /** Section */
+      section: string;
+    };
+    /**
+     * OverviewMetric
+     * @description Dashboard metric for the system overview.
+     */
+    OverviewMetric: {
+      /** Description */
+      description: string;
+      /** Key */
+      key: string;
+      /** Label */
+      label: string;
+      /** Value */
+      value: number;
+    };
+    /**
+     * ReadinessRead
+     * @description Readiness result for services that need dependencies.
+     */
+    ReadinessRead: {
+      /** Database */
+      database: string;
+      /** Status */
+      status: string;
+    };
+    /**
+     * RecipeCreate
+     * @description Recipe creation request.
+     */
+    RecipeCreate: {
+      /** Cook Minutes */
+      cook_minutes?: number | null;
+      /** Cuisine */
+      cuisine?: string | null;
+      /** Ingredients */
+      ingredients?: components["schemas"]["RecipeIngredientCreate"][];
+      /**
+       * Is Favorite
+       * @default false
+       */
+      is_favorite: boolean;
+      /** Prep Minutes */
+      prep_minutes?: number | null;
+      /** @default user */
+      source_type: components["schemas"]["RecipeSourceType"];
+      /** Source Url */
+      source_url?: string | null;
+      /** Summary */
+      summary?: string | null;
+      /** Title */
+      title: string;
+      /** Yield Servings */
+      yield_servings?: number | null;
+    };
+    /**
+     * RecipeIngredientCreate
+     * @description Ingredient input for recipe creation.
+     */
+    RecipeIngredientCreate: {
+      /** Name */
+      name: string;
+      /** Note */
+      note?: string | null;
+      /** Quantity */
+      quantity?: number | null;
+      /** Unit */
+      unit?: string | null;
+    };
+    /**
+     * RecipeIngredientRead
+     * @description Ingredient response for stored recipes.
+     */
+    RecipeIngredientRead: {
+      /** Id */
+      id: number;
+      /** Name */
+      name: string;
+      /** Note */
+      note?: string | null;
+      /** Position */
+      position: number;
+      /** Quantity */
+      quantity?: number | null;
+      /** Unit */
+      unit?: string | null;
+    };
+    /**
+     * RecipeRead
+     * @description Recipe response with ingredients.
+     */
+    RecipeRead: {
+      /** Cook Minutes */
+      cook_minutes: number | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Cuisine */
+      cuisine: string | null;
+      /** Id */
+      id: number;
+      /** Ingredients */
+      ingredients: components["schemas"]["RecipeIngredientRead"][];
+      /** Is Favorite */
+      is_favorite: boolean;
+      /** Prep Minutes */
+      prep_minutes: number | null;
+      source_type: components["schemas"]["RecipeSourceType"];
+      /** Source Url */
+      source_url: string | null;
+      /** Summary */
+      summary: string | null;
+      /** Title */
+      title: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+      /** Yield Servings */
+      yield_servings: number | null;
+    };
+    /**
+     * RecipeSourceType
+     * @description Where a recipe originated before it was stored in Kombu.
+     * @enum {string}
+     */
+    RecipeSourceType: "user" | "import" | "web" | "ai";
+    /**
+     * ScanSessionCreate
+     * @description Scan session creation request.
+     */
+    ScanSessionCreate: {
+      /** Device Hint */
+      device_hint?: string | null;
+      /** Raw Payload */
+      raw_payload?: string | null;
+      /** Scan Type */
+      scan_type: string;
+    };
+    /**
+     * ScanSessionRead
+     * @description Scan session response.
+     */
+    ScanSessionRead: {
+      /** Completed At */
+      completed_at: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Device Hint */
+      device_hint: string | null;
+      /** Id */
+      id: number;
+      /** Raw Payload */
+      raw_payload: string | null;
+      /** Result Summary */
+      result_summary: string | null;
+      /** Scan Type */
+      scan_type: string;
+      status: components["schemas"]["ScanSessionStatus"];
+    };
+    /**
+     * ScanSessionStatus
+     * @description Lifecycle states for scanner capture sessions.
+     * @enum {string}
+     */
+    ScanSessionStatus: "created" | "processing" | "completed" | "failed";
+    /**
+     * ScannerCapabilityRead
+     * @description Scanner capability response.
+     */
+    ScannerCapabilityRead: {
+      /** Description */
+      description: string;
+      /** Key */
+      key: string;
+      /** Label */
+      label: string;
+      /** Requires Hardware */
+      requires_hardware: boolean;
+    };
+    /**
+     * ShoppingItemStatus
+     * @description Lifecycle states for a shopping list item.
+     * @enum {string}
+     */
+    ShoppingItemStatus: "needed" | "purchased";
+    /**
+     * ShoppingListItemCreate
+     * @description Shopping list item creation request.
+     */
+    ShoppingListItemCreate: {
+      /** Category */
+      category?: string | null;
+      /** Linked Inventory Item Id */
+      linked_inventory_item_id?: number | null;
+      /** Name */
+      name: string;
+      /**
+       * Quantity
+       * @default 1
+       */
+      quantity: number;
+      /** Recipe Id */
+      recipe_id?: number | null;
+      /** @default needed */
+      status: components["schemas"]["ShoppingItemStatus"];
+      /** Unit */
+      unit?: string | null;
+    };
+    /**
+     * ShoppingListItemRead
+     * @description Shopping list item response.
+     */
+    ShoppingListItemRead: {
+      /** Category */
+      category?: string | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Id */
+      id: number;
+      /** Linked Inventory Item Id */
+      linked_inventory_item_id?: number | null;
+      /** Name */
+      name: string;
+      /**
+       * Quantity
+       * @default 1
+       */
+      quantity: number;
+      /** Recipe Id */
+      recipe_id?: number | null;
+      /** @default needed */
+      status: components["schemas"]["ShoppingItemStatus"];
+      /** Unit */
+      unit?: string | null;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+    };
+    /**
+     * ShoppingListItemUpdate
+     * @description Partial shopping list item update request.
+     */
+    ShoppingListItemUpdate: {
+      /** Category */
+      category?: string | null;
+      /** Quantity */
+      quantity?: number | null;
+      status?: components["schemas"]["ShoppingItemStatus"] | null;
+      /** Unit */
+      unit?: string | null;
+    };
+    /**
+     * SystemOverviewRead
+     * @description Initial dashboard payload for Kombu.
+     */
+    SystemOverviewRead: {
+      /** App Name */
+      app_name: string;
+      /** Environment */
+      environment: string;
+      /** Features */
+      features: components["schemas"]["FeatureFlag"][];
+      /** Metrics */
+      metrics: components["schemas"]["OverviewMetric"][];
+      /** Navigation */
+      navigation: components["schemas"]["NavigationItem"][];
+    };
+    /** ValidationError */
+    ValidationError: {
+      /** Context */
+      ctx?: Record<string, never>;
+      /** Input */
+      input?: unknown;
+      /** Location */
+      loc: (string | number)[];
+      /** Message */
+      msg: string;
+      /** Error Type */
+      type: string;
+    };
+  };
+  responses: never;
+  parameters: never;
+  requestBodies: never;
+  headers: never;
+  pathItems: never;
 }
 export type $defs = Record<string, never>;
 export interface operations {
-    capabilities_api_v1_ai_capabilities_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AiCapabilityRead"][];
-                };
-            };
-        };
+  capabilities_api_v1_ai_capabilities_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    suggest_api_v1_ai_suggestions_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["AiSuggestionCreate"];
-            };
+        content: {
+          "application/json": components["schemas"]["AiCapabilityRead"][];
         };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["AiSuggestionRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+      };
     };
-    expiry_api_v1_alerts_expiry_get: {
-        parameters: {
-            query?: {
-                days?: number;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ExpiryAlertRead"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  suggest_api_v1_ai_suggestions_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    jobs_api_v1_imports_jobs_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportJobRead"][];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["AiSuggestionCreate"];
+      };
     };
-    create_job_api_v1_imports_jobs_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ImportJobCreate"];
-            };
+        content: {
+          "application/json": components["schemas"]["AiSuggestionRead"];
         };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportJobRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    sources_api_v1_imports_sources_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ImportSourceRead"][];
-                };
-            };
-        };
+  };
+  expiry_api_v1_alerts_expiry_get: {
+    parameters: {
+      query?: {
+        days?: number;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    index_api_v1_inventory_get: {
-        parameters: {
-            query?: {
-                location?: components["schemas"]["InventoryLocation"] | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InventoryItemRead"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["ExpiryAlertRead"][];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    create_api_v1_inventory_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["InventoryItemCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["InventoryItemRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  jobs_api_v1_imports_jobs_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    index_api_v1_recipes_get: {
-        parameters: {
-            query?: {
-                search?: string | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecipeRead"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["ImportJobRead"][];
         };
+      };
     };
-    create_api_v1_recipes_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["RecipeCreate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecipeRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  create_job_api_v1_imports_jobs_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    show_api_v1_recipes__recipe_id__get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                recipe_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["RecipeRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ImportJobCreate"];
+      };
     };
-    capabilities_api_v1_scanner_capabilities_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ScannerCapabilityRead"][];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["ImportJobRead"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    sessions_api_v1_scanner_sessions_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ScanSessionRead"][];
-                };
-            };
-        };
+  };
+  sources_api_v1_imports_sources_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    create_session_api_v1_scanner_sessions_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ScanSessionCreate"];
-            };
+        content: {
+          "application/json": components["schemas"]["ImportSourceRead"][];
         };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ScanSessionRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+      };
     };
-    index_api_v1_shopping_list_get: {
-        parameters: {
-            query?: {
-                status_filter?: components["schemas"]["ShoppingItemStatus"] | null;
-            };
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShoppingListItemRead"][];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  index_api_v1_inventory_get: {
+    parameters: {
+      query?: {
+        location?: components["schemas"]["InventoryLocation"] | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    create_api_v1_shopping_list_post: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ShoppingListItemCreate"];
-            };
+        content: {
+          "application/json": components["schemas"]["InventoryItemRead"][];
         };
-        responses: {
-            /** @description Successful Response */
-            201: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShoppingListItemRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
         };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    update_api_v1_shopping_list__item_id__patch: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path: {
-                item_id: number;
-            };
-            cookie?: never;
-        };
-        requestBody: {
-            content: {
-                "application/json": components["schemas"]["ShoppingListItemUpdate"];
-            };
-        };
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ShoppingListItemRead"];
-                };
-            };
-            /** @description Validation Error */
-            422: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HTTPValidationError"];
-                };
-            };
-        };
+  };
+  create_api_v1_inventory_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    overview_api_v1_system_overview_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["SystemOverviewRead"];
-                };
-            };
-        };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["InventoryItemCreate"];
+      };
     };
-    readiness_api_v1_system_readiness_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["ReadinessRead"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["InventoryItemRead"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
-    me_api_v1_users_me_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
-        };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["CurrentUserRead"];
-                };
-            };
-        };
+  };
+  index_api_v1_recipes_get: {
+    parameters: {
+      query?: {
+        search?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
     };
-    healthz_healthz_get: {
-        parameters: {
-            query?: never;
-            header?: never;
-            path?: never;
-            cookie?: never;
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
         };
-        requestBody?: never;
-        responses: {
-            /** @description Successful Response */
-            200: {
-                headers: {
-                    [name: string]: unknown;
-                };
-                content: {
-                    "application/json": components["schemas"]["HealthRead"];
-                };
-            };
+        content: {
+          "application/json": components["schemas"]["RecipeRead"][];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
     };
+  };
+  create_api_v1_recipes_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecipeCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecipeRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  show_api_v1_recipes__recipe_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        recipe_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecipeRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  capabilities_api_v1_scanner_capabilities_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ScannerCapabilityRead"][];
+        };
+      };
+    };
+  };
+  sessions_api_v1_scanner_sessions_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ScanSessionRead"][];
+        };
+      };
+    };
+  };
+  create_session_api_v1_scanner_sessions_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ScanSessionCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ScanSessionRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  index_api_v1_shopping_list_get: {
+    parameters: {
+      query?: {
+        status_filter?: components["schemas"]["ShoppingItemStatus"] | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ShoppingListItemRead"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  create_api_v1_shopping_list_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ShoppingListItemCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ShoppingListItemRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  update_api_v1_shopping_list__item_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        item_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["ShoppingListItemUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ShoppingListItemRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  overview_api_v1_system_overview_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["SystemOverviewRead"];
+        };
+      };
+    };
+  };
+  readiness_api_v1_system_readiness_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["ReadinessRead"];
+        };
+      };
+    };
+  };
+  me_api_v1_users_me_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["CurrentUserRead"];
+        };
+      };
+    };
+  };
+  healthz_healthz_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HealthRead"];
+        };
+      };
+    };
+  };
 }
