@@ -20,8 +20,6 @@ dist/
 coverage/
 
 var/
-openapi.json
-ui/app/lib/api/schema.d.ts
 
 *.log
 *.sqlite

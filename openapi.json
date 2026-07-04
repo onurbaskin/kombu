@@ -1,0 +1,2246 @@
+{
+  "components": {
+    "schemas": {
+      "AiCapabilityRead": {
+        "description": "AI capability exposed without vendor-specific credentials.",
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "enabled",
+          "description"
+        ],
+        "title": "AiCapabilityRead",
+        "type": "object"
+      },
+      "AiSuggestionCreate": {
+        "description": "AI suggestion request.",
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "prompt": {
+            "minLength": 1,
+            "title": "Prompt",
+            "type": "string"
+          }
+        },
+        "required": [
+          "prompt"
+        ],
+        "title": "AiSuggestionCreate",
+        "type": "object"
+      },
+      "AiSuggestionRead": {
+        "description": "AI suggestion response.",
+        "properties": {
+          "context": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Context"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "suggestion": {
+            "title": "Suggestion",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "prompt",
+          "context",
+          "suggestion",
+          "created_at"
+        ],
+        "title": "AiSuggestionRead",
+        "type": "object"
+      },
+      "CurrentUserRead": {
+        "description": "Current user bootstrap response.",
+        "properties": {
+          "auth_provider": {
+            "title": "Auth Provider",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "string"
+          },
+          "permissions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Permissions",
+            "type": "array"
+          },
+          "role": {
+            "title": "Role",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "display_name",
+          "role",
+          "auth_provider",
+          "permissions"
+        ],
+        "title": "CurrentUserRead",
+        "type": "object"
+      },
+      "ExpiryAlertRead": {
+        "description": "Expiry alert response for an inventory item.",
+        "properties": {
+          "days_until_expiry": {
+            "title": "Days Until Expiry",
+            "type": "integer"
+          },
+          "expires_on": {
+            "format": "date",
+            "title": "Expires On",
+            "type": "string"
+          },
+          "item_id": {
+            "title": "Item Id",
+            "type": "integer"
+          },
+          "location": {
+            "$ref": "#/components/schemas/InventoryLocation"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "severity": {
+            "title": "Severity",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_id",
+          "name",
+          "location",
+          "expires_on",
+          "days_until_expiry",
+          "severity"
+        ],
+        "title": "ExpiryAlertRead",
+        "type": "object"
+      },
+      "FeatureFlag": {
+        "description": "Feature availability shown to the frontend.",
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "enabled",
+          "description"
+        ],
+        "title": "FeatureFlag",
+        "type": "object"
+      },
+      "HTTPValidationError": {
+        "properties": {
+          "detail": {
+            "items": {
+              "$ref": "#/components/schemas/ValidationError"
+            },
+            "title": "Detail",
+            "type": "array"
+          }
+        },
+        "title": "HTTPValidationError",
+        "type": "object"
+      },
+      "HealthRead": {
+        "description": "Public liveness response.",
+        "properties": {
+          "service": {
+            "title": "Service",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          },
+          "version": {
+            "title": "Version",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "service",
+          "version"
+        ],
+        "title": "HealthRead",
+        "type": "object"
+      },
+      "ImportJobCreate": {
+        "description": "Import job creation request.",
+        "properties": {
+          "source_name": {
+            "maxLength": 180,
+            "minLength": 1,
+            "title": "Source Name",
+            "type": "string"
+          },
+          "source_type": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Source Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_name",
+          "source_type"
+        ],
+        "title": "ImportJobCreate",
+        "type": "object"
+      },
+      "ImportJobRead": {
+        "description": "Import job response.",
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "imported_records": {
+            "title": "Imported Records",
+            "type": "integer"
+          },
+          "source_name": {
+            "title": "Source Name",
+            "type": "string"
+          },
+          "source_type": {
+            "title": "Source Type",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ImportJobStatus"
+          },
+          "total_records": {
+            "title": "Total Records",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "source_name",
+          "source_type",
+          "status",
+          "total_records",
+          "imported_records",
+          "error_message",
+          "created_at",
+          "completed_at"
+        ],
+        "title": "ImportJobRead",
+        "type": "object"
+      },
+      "ImportJobStatus": {
+        "description": "Lifecycle states for recipe import jobs.",
+        "enum": [
+          "queued",
+          "running",
+          "completed",
+          "failed"
+        ],
+        "title": "ImportJobStatus",
+        "type": "string"
+      },
+      "ImportSourceRead": {
+        "description": "Import source that Kombu can prepare for users.",
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "ready_for_import": {
+            "title": "Ready For Import",
+            "type": "boolean"
+          },
+          "source_type": {
+            "title": "Source Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "source_type",
+          "description",
+          "ready_for_import"
+        ],
+        "title": "ImportSourceRead",
+        "type": "object"
+      },
+      "InventoryItemCreate": {
+        "description": "Inventory item creation request.",
+        "properties": {
+          "expires_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires On"
+          },
+          "location": {
+            "$ref": "#/components/schemas/InventoryLocation",
+            "default": "pantry"
+          },
+          "name": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "opened_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opened On"
+          },
+          "quantity": {
+            "default": 1,
+            "minimum": 0.0,
+            "title": "Quantity",
+            "type": "number"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "InventoryItemCreate",
+        "type": "object"
+      },
+      "InventoryItemRead": {
+        "description": "Inventory item response.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "expires_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expires On"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "location": {
+            "$ref": "#/components/schemas/InventoryLocation",
+            "default": "pantry"
+          },
+          "name": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "notes": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Notes"
+          },
+          "opened_on": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opened On"
+          },
+          "quantity": {
+            "default": 1,
+            "minimum": 0.0,
+            "title": "Quantity",
+            "type": "number"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "InventoryItemRead",
+        "type": "object"
+      },
+      "InventoryLocation": {
+        "description": "Common locations where inventory items can be stored.",
+        "enum": [
+          "pantry",
+          "fridge",
+          "freezer",
+          "counter",
+          "other"
+        ],
+        "title": "InventoryLocation",
+        "type": "string"
+      },
+      "NavigationItem": {
+        "description": "Frontend navigation item provided by the API.",
+        "properties": {
+          "href": {
+            "title": "Href",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "section": {
+            "title": "Section",
+            "type": "string"
+          }
+        },
+        "required": [
+          "label",
+          "href",
+          "section"
+        ],
+        "title": "NavigationItem",
+        "type": "object"
+      },
+      "OverviewMetric": {
+        "description": "Dashboard metric for the system overview.",
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "value": {
+            "title": "Value",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "value",
+          "description"
+        ],
+        "title": "OverviewMetric",
+        "type": "object"
+      },
+      "ReadinessRead": {
+        "description": "Readiness result for services that need dependencies.",
+        "properties": {
+          "database": {
+            "title": "Database",
+            "type": "string"
+          },
+          "status": {
+            "title": "Status",
+            "type": "string"
+          }
+        },
+        "required": [
+          "status",
+          "database"
+        ],
+        "title": "ReadinessRead",
+        "type": "object"
+      },
+      "RecipeCreate": {
+        "description": "Recipe creation request.",
+        "properties": {
+          "cook_minutes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cook Minutes"
+          },
+          "cuisine": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cuisine"
+          },
+          "ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeIngredientCreate"
+            },
+            "title": "Ingredients",
+            "type": "array"
+          },
+          "is_favorite": {
+            "default": false,
+            "title": "Is Favorite",
+            "type": "boolean"
+          },
+          "prep_minutes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Minutes"
+          },
+          "source_type": {
+            "$ref": "#/components/schemas/RecipeSourceType",
+            "default": "user"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "maxLength": 1024,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "title": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Title",
+            "type": "string"
+          },
+          "yield_servings": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yield Servings"
+          }
+        },
+        "required": [
+          "title"
+        ],
+        "title": "RecipeCreate",
+        "type": "object"
+      },
+      "RecipeIngredientCreate": {
+        "description": "Ingredient input for recipe creation.",
+        "properties": {
+          "name": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 240,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "RecipeIngredientCreate",
+        "type": "object"
+      },
+      "RecipeIngredientRead": {
+        "description": "Ingredient response for stored recipes.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "name": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "maxLength": 240,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "position": {
+            "title": "Position",
+            "type": "integer"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "position"
+        ],
+        "title": "RecipeIngredientRead",
+        "type": "object"
+      },
+      "RecipeRead": {
+        "description": "Recipe response with ingredients.",
+        "properties": {
+          "cook_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cook Minutes"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "cuisine": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cuisine"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeIngredientRead"
+            },
+            "title": "Ingredients",
+            "type": "array"
+          },
+          "is_favorite": {
+            "title": "Is Favorite",
+            "type": "boolean"
+          },
+          "prep_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Minutes"
+          },
+          "source_type": {
+            "$ref": "#/components/schemas/RecipeSourceType"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "yield_servings": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yield Servings"
+          }
+        },
+        "required": [
+          "id",
+          "title",
+          "summary",
+          "source_url",
+          "source_type",
+          "cuisine",
+          "yield_servings",
+          "prep_minutes",
+          "cook_minutes",
+          "is_favorite",
+          "created_at",
+          "updated_at",
+          "ingredients"
+        ],
+        "title": "RecipeRead",
+        "type": "object"
+      },
+      "RecipeSourceType": {
+        "description": "Where a recipe originated before it was stored in Kombu.",
+        "enum": [
+          "user",
+          "import",
+          "web",
+          "ai"
+        ],
+        "title": "RecipeSourceType",
+        "type": "string"
+      },
+      "ScanSessionCreate": {
+        "description": "Scan session creation request.",
+        "properties": {
+          "device_hint": {
+            "anyOf": [
+              {
+                "maxLength": 160,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Hint"
+          },
+          "raw_payload": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Payload"
+          },
+          "scan_type": {
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Scan Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "scan_type"
+        ],
+        "title": "ScanSessionCreate",
+        "type": "object"
+      },
+      "ScanSessionRead": {
+        "description": "Scan session response.",
+        "properties": {
+          "completed_at": {
+            "anyOf": [
+              {
+                "format": "date-time",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "device_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Device Hint"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "raw_payload": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Payload"
+          },
+          "result_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Summary"
+          },
+          "scan_type": {
+            "title": "Scan Type",
+            "type": "string"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ScanSessionStatus"
+          }
+        },
+        "required": [
+          "id",
+          "scan_type",
+          "status",
+          "device_hint",
+          "raw_payload",
+          "result_summary",
+          "created_at",
+          "completed_at"
+        ],
+        "title": "ScanSessionRead",
+        "type": "object"
+      },
+      "ScanSessionStatus": {
+        "description": "Lifecycle states for scanner capture sessions.",
+        "enum": [
+          "created",
+          "processing",
+          "completed",
+          "failed"
+        ],
+        "title": "ScanSessionStatus",
+        "type": "string"
+      },
+      "ScannerCapabilityRead": {
+        "description": "Scanner capability response.",
+        "properties": {
+          "description": {
+            "title": "Description",
+            "type": "string"
+          },
+          "key": {
+            "title": "Key",
+            "type": "string"
+          },
+          "label": {
+            "title": "Label",
+            "type": "string"
+          },
+          "requires_hardware": {
+            "title": "Requires Hardware",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "key",
+          "label",
+          "description",
+          "requires_hardware"
+        ],
+        "title": "ScannerCapabilityRead",
+        "type": "object"
+      },
+      "ShoppingItemStatus": {
+        "description": "Lifecycle states for a shopping list item.",
+        "enum": [
+          "needed",
+          "purchased"
+        ],
+        "title": "ShoppingItemStatus",
+        "type": "string"
+      },
+      "ShoppingListItemCreate": {
+        "description": "Shopping list item creation request.",
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "linked_inventory_item_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Inventory Item Id"
+          },
+          "name": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity": {
+            "default": 1,
+            "minimum": 0.0,
+            "title": "Quantity",
+            "type": "number"
+          },
+          "recipe_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ShoppingItemStatus",
+            "default": "needed"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "title": "ShoppingListItemCreate",
+        "type": "object"
+      },
+      "ShoppingListItemRead": {
+        "description": "Shopping list item response.",
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "linked_inventory_item_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Linked Inventory Item Id"
+          },
+          "name": {
+            "maxLength": 240,
+            "minLength": 1,
+            "title": "Name",
+            "type": "string"
+          },
+          "quantity": {
+            "default": 1,
+            "minimum": 0.0,
+            "title": "Quantity",
+            "type": "number"
+          },
+          "recipe_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ShoppingItemStatus",
+            "default": "needed"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          }
+        },
+        "required": [
+          "name",
+          "id",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "ShoppingListItemRead",
+        "type": "object"
+      },
+      "ShoppingListItemUpdate": {
+        "description": "Partial shopping list item update request.",
+        "properties": {
+          "category": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "quantity": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Quantity"
+          },
+          "status": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ShoppingItemStatus"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "maxLength": 80,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
+          }
+        },
+        "title": "ShoppingListItemUpdate",
+        "type": "object"
+      },
+      "SystemOverviewRead": {
+        "description": "Initial dashboard payload for Kombu.",
+        "properties": {
+          "app_name": {
+            "title": "App Name",
+            "type": "string"
+          },
+          "environment": {
+            "title": "Environment",
+            "type": "string"
+          },
+          "features": {
+            "items": {
+              "$ref": "#/components/schemas/FeatureFlag"
+            },
+            "title": "Features",
+            "type": "array"
+          },
+          "metrics": {
+            "items": {
+              "$ref": "#/components/schemas/OverviewMetric"
+            },
+            "title": "Metrics",
+            "type": "array"
+          },
+          "navigation": {
+            "items": {
+              "$ref": "#/components/schemas/NavigationItem"
+            },
+            "title": "Navigation",
+            "type": "array"
+          }
+        },
+        "required": [
+          "app_name",
+          "environment",
+          "metrics",
+          "features",
+          "navigation"
+        ],
+        "title": "SystemOverviewRead",
+        "type": "object"
+      },
+      "ValidationError": {
+        "properties": {
+          "ctx": {
+            "title": "Context",
+            "type": "object"
+          },
+          "input": {
+            "title": "Input"
+          },
+          "loc": {
+            "items": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "integer"
+                }
+              ]
+            },
+            "title": "Location",
+            "type": "array"
+          },
+          "msg": {
+            "title": "Message",
+            "type": "string"
+          },
+          "type": {
+            "title": "Error Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "loc",
+          "msg",
+          "type"
+        ],
+        "title": "ValidationError",
+        "type": "object"
+      }
+    }
+  },
+  "info": {
+    "description": "Self-hostable kitchen OS API for recipes, inventory, shopping, scanners, and AI-ready workflows.",
+    "title": "Kombu",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/api/v1/ai/capabilities": {
+      "get": {
+        "description": "Return AI capabilities for the current deployment.",
+        "operationId": "capabilities_api_v1_ai_capabilities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/AiCapabilityRead"
+                  },
+                  "title": "Response Capabilities Api V1 Ai Capabilities Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Capabilities",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/api/v1/ai/suggestions": {
+      "post": {
+        "description": "Create a provider-free AI suggestion record.",
+        "operationId": "suggest_api_v1_ai_suggestions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiSuggestionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiSuggestionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Suggest",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/api/v1/alerts/expiry": {
+      "get": {
+        "description": "Return inventory expiry alerts.",
+        "operationId": "expiry_api_v1_alerts_expiry_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "days",
+            "required": false,
+            "schema": {
+              "default": 7,
+              "maximum": 365,
+              "minimum": 0,
+              "title": "Days",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ExpiryAlertRead"
+                  },
+                  "title": "Response Expiry Api V1 Alerts Expiry Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Expiry",
+        "tags": [
+          "alerts"
+        ]
+      }
+    },
+    "/api/v1/imports/jobs": {
+      "get": {
+        "description": "Return import jobs.",
+        "operationId": "jobs_api_v1_imports_jobs_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ImportJobRead"
+                  },
+                  "title": "Response Jobs Api V1 Imports Jobs Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Jobs",
+        "tags": [
+          "imports"
+        ]
+      },
+      "post": {
+        "description": "Create an import job.",
+        "operationId": "create_job_api_v1_imports_jobs_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportJobCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportJobRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Job",
+        "tags": [
+          "imports"
+        ]
+      }
+    },
+    "/api/v1/imports/sources": {
+      "get": {
+        "description": "Return supported import source types.",
+        "operationId": "sources_api_v1_imports_sources_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ImportSourceRead"
+                  },
+                  "title": "Response Sources Api V1 Imports Sources Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sources",
+        "tags": [
+          "imports"
+        ]
+      }
+    },
+    "/api/v1/inventory": {
+      "get": {
+        "description": "List tracked inventory items.",
+        "operationId": "index_api_v1_inventory_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "location",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/InventoryLocation"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Location"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/InventoryItemRead"
+                  },
+                  "title": "Response Index Api V1 Inventory Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Index",
+        "tags": [
+          "inventory"
+        ]
+      },
+      "post": {
+        "description": "Create a tracked inventory item.",
+        "operationId": "create_api_v1_inventory_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/InventoryItemCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryItemRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create",
+        "tags": [
+          "inventory"
+        ]
+      }
+    },
+    "/api/v1/recipes": {
+      "get": {
+        "description": "List recipes stored in Kombu.",
+        "operationId": "index_api_v1_recipes_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "search",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecipeRead"
+                  },
+                  "title": "Response Index Api V1 Recipes Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Index",
+        "tags": [
+          "recipes"
+        ]
+      },
+      "post": {
+        "description": "Create a recipe.",
+        "operationId": "create_api_v1_recipes_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create",
+        "tags": [
+          "recipes"
+        ]
+      }
+    },
+    "/api/v1/recipes/{recipe_id}": {
+      "get": {
+        "description": "Return one recipe.",
+        "operationId": "show_api_v1_recipes__recipe_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Show",
+        "tags": [
+          "recipes"
+        ]
+      }
+    },
+    "/api/v1/scanner/capabilities": {
+      "get": {
+        "description": "Return supported scanner workflows.",
+        "operationId": "capabilities_api_v1_scanner_capabilities_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ScannerCapabilityRead"
+                  },
+                  "title": "Response Capabilities Api V1 Scanner Capabilities Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Capabilities",
+        "tags": [
+          "scanner"
+        ]
+      }
+    },
+    "/api/v1/scanner/sessions": {
+      "get": {
+        "description": "Return scanner sessions.",
+        "operationId": "sessions_api_v1_scanner_sessions_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ScanSessionRead"
+                  },
+                  "title": "Response Sessions Api V1 Scanner Sessions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Sessions",
+        "tags": [
+          "scanner"
+        ]
+      },
+      "post": {
+        "description": "Create a scanner session.",
+        "operationId": "create_session_api_v1_scanner_sessions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ScanSessionCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ScanSessionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create Session",
+        "tags": [
+          "scanner"
+        ]
+      }
+    },
+    "/api/v1/shopping-list": {
+      "get": {
+        "description": "List shopping list items.",
+        "operationId": "index_api_v1_shopping_list_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "status_filter",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "$ref": "#/components/schemas/ShoppingItemStatus"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status Filter"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/ShoppingListItemRead"
+                  },
+                  "title": "Response Index Api V1 Shopping List Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Index",
+        "tags": [
+          "shopping-list"
+        ]
+      },
+      "post": {
+        "description": "Create a shopping list item.",
+        "operationId": "create_api_v1_shopping_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShoppingListItemCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShoppingListItemRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create",
+        "tags": [
+          "shopping-list"
+        ]
+      }
+    },
+    "/api/v1/shopping-list/{item_id}": {
+      "patch": {
+        "description": "Update a shopping list item.",
+        "operationId": "update_api_v1_shopping_list__item_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShoppingListItemUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShoppingListItemRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update",
+        "tags": [
+          "shopping-list"
+        ]
+      }
+    },
+    "/api/v1/system/overview": {
+      "get": {
+        "description": "Return initial dashboard data for the frontend.",
+        "operationId": "overview_api_v1_system_overview_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemOverviewRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Overview",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/system/readiness": {
+      "get": {
+        "description": "Return readiness for dependency-aware checks.",
+        "operationId": "readiness_api_v1_system_readiness_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Readiness",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/users/me": {
+      "get": {
+        "description": "Return the current user placeholder until auth is configured.",
+        "operationId": "me_api_v1_users_me_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CurrentUserRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Me",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/healthz": {
+      "get": {
+        "description": "Return a lightweight liveness check.",
+        "operationId": "healthz_healthz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HealthRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Healthz",
+        "tags": [
+          "health"
+        ]
+      }
+    }
+  }
+}
