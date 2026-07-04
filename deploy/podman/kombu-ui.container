@@ -1,0 +1,19 @@
+[Unit]
+Description=Kombu React Router UI
+After=kombu-api.service
+Requires=kombu-api.service
+
+[Container]
+Image=localhost/kombu-ui:latest
+ContainerName=kombu-ui
+Network=kombu.network
+EnvironmentFile=%h/.config/kombu/kombu.env
+Environment=HOST=0.0.0.0
+Environment=PORT=3000
+PublishPort=3000:3000
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

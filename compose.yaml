@@ -1,0 +1,71 @@
+services:
+  db:
+    image: docker.io/library/postgres:17-alpine
+    environment:
+      POSTGRES_DB: ${KOMBU_POSTGRES_DB:-kombu}
+      POSTGRES_USER: ${KOMBU_POSTGRES_USER:-kombu}
+      POSTGRES_PASSWORD: ${KOMBU_POSTGRES_PASSWORD:-kombu_change_me}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - kombu-postgres:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: .
+      dockerfile: api/Containerfile
+    environment:
+      KOMBU_ENVIRONMENT: ${KOMBU_ENVIRONMENT:-development}
+      KOMBU_LOG_LEVEL: ${KOMBU_LOG_LEVEL:-INFO}
+      KOMBU_API_PREFIX: ${KOMBU_API_PREFIX:-/api/v1}
+      KOMBU_PUBLIC_WEB_URL: ${KOMBU_PUBLIC_WEB_URL:-http://localhost:3000}
+      KOMBU_CORS_ORIGINS: ${KOMBU_CORS_ORIGINS:-http://localhost:3000,http://localhost:5173}
+      KOMBU_DATABASE_URL: ${KOMBU_DATABASE_URL:-postgresql+psycopg://${KOMBU_POSTGRES_USER:-kombu}:${KOMBU_POSTGRES_PASSWORD:-kombu_change_me}@db:5432/${KOMBU_POSTGRES_DB:-kombu}}
+      KOMBU_AI_FEATURES_ENABLED: ${KOMBU_AI_FEATURES_ENABLED:-false}
+      KOMBU_SCANNER_UPLOAD_DIR: ${KOMBU_SCANNER_UPLOAD_DIR:-/app/var/scans}
+      KOMBU_RECIPE_IMPORT_DIR: ${KOMBU_RECIPE_IMPORT_DIR:-/app/var/imports}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        uv run --no-dev alembic -c api/alembic.ini upgrade head
+        exec uv run --no-dev uvicorn api.app.main:app --host 0.0.0.0 --port 8000
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/.venv/bin/python",
+          "-c",
+          "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/healthz', timeout=2)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    ports:
+      - "${KOMBU_API_PORT:-8000}:8000"
+    volumes:
+      - kombu-var:/app/var
+
+  ui:
+    build:
+      context: .
+      dockerfile: ui/Containerfile
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      KOMBU_API_BASE_URL: ${KOMBU_API_BASE_URL:-http://api:8000}
+    depends_on:
+      api:
+        condition: service_healthy
+    ports:
+      - "${KOMBU_UI_PORT:-3000}:3000"
+
+volumes:
+  kombu-postgres:
+  kombu-var:

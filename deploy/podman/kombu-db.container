@@ -1,0 +1,15 @@
+[Unit]
+Description=Kombu PostgreSQL database
+
+[Container]
+Image=docker.io/library/postgres:17-alpine
+ContainerName=kombu-db
+Network=kombu.network
+EnvironmentFile=%h/.config/kombu/kombu.env
+Volume=%h/kombu/postgres:/var/lib/postgresql/data:Z
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

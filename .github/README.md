@@ -35,6 +35,9 @@ docker compose up --build
 Podman users can run the same Compose file through `podman compose` or adapt the
 Quadlet examples under `deploy/podman/`.
 
+The Compose stack bundles PostgreSQL, but users can set `KOMBU_DATABASE_URL` to
+an existing PostgreSQL-compatible database instead.
+
 ## License
 
 Kombu is released under the MIT license.

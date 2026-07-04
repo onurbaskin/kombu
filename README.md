@@ -12,3 +12,21 @@ It is built for self-hosting from day one:
 - MIT licensed and designed for personal, household, team, or company use.
 
 See [.github/README.md](.github/README.md) for the fuller project overview.
+
+## Quick Start
+
+```sh
+uv sync
+uv run alembic -c api/alembic.ini upgrade head
+uv run uvicorn api.app.main:app --reload
+
+pnpm --dir ui install
+pnpm --dir ui dev
+```
+
+Or run the bundled container stack:
+
+```sh
+cp .env.example .env
+docker compose up --build
+```

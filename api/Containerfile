@@ -1,0 +1,20 @@
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    UV_PROJECT_ENVIRONMENT=/app/.venv
+
+WORKDIR /app
+
+COPY pyproject.toml uv.lock .python-version ./
+RUN uv sync --locked --no-dev
+
+COPY api ./api
+COPY scripts ./scripts
+
+EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD ["/app/.venv/bin/python", "-c", "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/healthz', timeout=2)"]
+
+CMD ["uv", "run", "--no-dev", "uvicorn", "api.app.main:app", "--host", "0.0.0.0", "--port", "8000"]
