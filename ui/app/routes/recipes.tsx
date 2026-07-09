@@ -92,15 +92,16 @@ export const handle = {
       setImportError(null);
       const result = await importRecipeFromUrl(url.toString());
       setIsImporting(false);
+      const recipeId = result.data?.id;
 
-      if (result.error || !result.data) {
+      if (result.error || !recipeId) {
         setImportError(result.error ?? "Unable to import the recipe.");
         return;
       }
 
       setImportOpen(false);
       setImportUrl("");
-      navigate(`/recipes/${result.data.id}`);
+      navigate(`/recipes/${recipeId}`);
     };
 
     return (
