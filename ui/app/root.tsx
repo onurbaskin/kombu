@@ -134,23 +134,28 @@ export default function App() {
                 <MenuIcon />
                 <span className="sr-only">Open navigation</span>
               </Button>
-              <Breadcrumb>
-                <BreadcrumbList>
-                  <BreadcrumbItem>
-                    <BreadcrumbLink asChild>
-                      <Link to="/">Kombu</Link>
-                    </BreadcrumbLink>
-                  </BreadcrumbItem>
-                  {pageTitle !== "Dashboard" && (
-                    <>
-                      <BreadcrumbSeparator />
-                      <BreadcrumbItem>
-                        <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
-                      </BreadcrumbItem>
-                    </>
-                  )}
-                </BreadcrumbList>
-              </Breadcrumb>
+              <div className="flex min-w-0 flex-col">
+                <Breadcrumb className="hidden sm:block">
+                  <BreadcrumbList>
+                    <BreadcrumbItem>
+                      <BreadcrumbLink asChild>
+                        <Link to="/">Kombu</Link>
+                      </BreadcrumbLink>
+                    </BreadcrumbItem>
+                    {pageTitle !== "Dashboard" && (
+                      <>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem>
+                          <BreadcrumbPage>{pageTitle}</BreadcrumbPage>
+                        </BreadcrumbItem>
+                      </>
+                    )}
+                  </BreadcrumbList>
+                </Breadcrumb>
+                <h1 className="truncate font-semibold text-sm sm:text-base">
+                  {pageTitle}
+                </h1>
+              </div>
             </div>
             <div className="ml-auto flex items-center gap-2">
               {Topbar ? <Topbar /> : null}
