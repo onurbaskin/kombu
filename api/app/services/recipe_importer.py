@@ -86,9 +86,7 @@ def import_kaggle_dataset(session: Session, import_job_id: int) -> ImportJob:
                     job.imported_records = total_recipes
                     session.merge(job)
                     session.commit()
-                    logger.info(
-                        f"Imported {total_recipes:,}/{total_rows:,} recipes..."
-                    )
+                    logger.info(f"Imported {total_recipes:,}/{total_rows:,} recipes...")
 
             if batch_recipes:
                 total_ingredients += _flush_batch(session, batch_recipes)

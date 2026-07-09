@@ -214,10 +214,7 @@ def known_providers() -> list[dict]:
 def list_providers(session: SessionDep) -> list[AiProviderConfigRead]:
     """List all configured AI providers."""
     stmt = select(AiProviderConfig).order_by(AiProviderConfig.created_at.desc())
-    return [
-        _provider_response(c)
-        for c in session.scalars(stmt).all()
-    ]
+    return [_provider_response(c) for c in session.scalars(stmt).all()]
 
 
 @router.post(
