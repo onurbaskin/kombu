@@ -29,6 +29,23 @@ import {
 import { getImportJobs, getImportSources } from "~/lib/api/resources";
 import type { Route } from "./+types/imports";
 
+export const handle = {
+  topbar: function ImportsTopbar() {
+    return (
+      <>
+        <Button variant="outline">
+          <FileJsonIcon data-icon="inline-start" />
+          Validate mapping
+        </Button>
+        <Button>
+          <PlusIcon data-icon="inline-start" />
+          Queue import
+        </Button>
+      </>
+    );
+  },
+};
+
 export function meta() {
   return [{ title: "Imports | Kombu" }];
 }
@@ -50,18 +67,6 @@ export default function Imports({ loaderData }: Route.ComponentProps) {
         eyebrow="Recipe imports"
         title="Millions of recipes are useful when users ask for them."
         description="Kombu prepares import sources for datasets, JSON, CSV, and web captures without making imports the center of the product."
-        actions={
-          <>
-            <Button variant="outline">
-              <FileJsonIcon data-icon="inline-start" />
-              Validate mapping
-            </Button>
-            <Button>
-              <PlusIcon data-icon="inline-start" />
-              Queue import
-            </Button>
-          </>
-        }
       />
 
       <SourceNotice results={[sources, jobs]} />

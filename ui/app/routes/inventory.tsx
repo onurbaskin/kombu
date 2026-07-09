@@ -30,6 +30,23 @@ import {
 import { getExpiryAlerts, getInventory } from "~/lib/api/resources";
 import type { Route } from "./+types/inventory";
 
+export const handle = {
+  topbar: function InventoryTopbar() {
+    return (
+      <>
+        <Button variant="outline">
+          <BellIcon data-icon="inline-start" />
+          Expiry rules
+        </Button>
+        <Button>
+          <PlusIcon data-icon="inline-start" />
+          Add item
+        </Button>
+      </>
+    );
+  },
+};
+
 export function meta() {
   return [{ title: "Inventory | Kombu" }];
 }
@@ -53,18 +70,6 @@ export default function Inventory({ loaderData }: Route.ComponentProps) {
         eyebrow="Inventory"
         title="Know what is in the kitchen before planning what to cook."
         description="Track pantry, fridge, freezer, and counter stock with expiry data ready for alerts and AI planning."
-        actions={
-          <>
-            <Button variant="outline">
-              <BellIcon data-icon="inline-start" />
-              Expiry rules
-            </Button>
-            <Button>
-              <PlusIcon data-icon="inline-start" />
-              Add item
-            </Button>
-          </>
-        }
       />
 
       <SourceNotice results={[inventory, alerts]} />

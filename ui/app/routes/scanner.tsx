@@ -37,6 +37,23 @@ import {
 import { getScannerCapabilities, getScanSessions } from "~/lib/api/resources";
 import type { Route } from "./+types/scanner";
 
+export const handle = {
+  topbar: function ScannerTopbar() {
+    return (
+      <>
+        <Button variant="outline">
+          <UploadIcon data-icon="inline-start" />
+          Upload receipt
+        </Button>
+        <Button>
+          <CameraIcon data-icon="inline-start" />
+          Start capture
+        </Button>
+      </>
+    );
+  },
+};
+
 export function meta() {
   return [{ title: "Scanner | Kombu" }];
 }
@@ -59,18 +76,6 @@ export default function Scanner({ loaderData }: Route.ComponentProps) {
         eyebrow="Scanner"
         title="Camera and hardware capture should feed the same kitchen graph."
         description="Kombu leaves room for browser camera scans, barcode scanners, receipts, and dedicated kitchen hardware."
-        actions={
-          <>
-            <Button variant="outline">
-              <UploadIcon data-icon="inline-start" />
-              Upload receipt
-            </Button>
-            <Button>
-              <CameraIcon data-icon="inline-start" />
-              Start capture
-            </Button>
-          </>
-        }
       />
 
       <SourceNotice results={[capabilities, sessions]} />

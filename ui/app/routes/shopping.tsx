@@ -23,6 +23,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import { getShoppingItems } from "~/lib/api/resources";
 import type { Route } from "./+types/shopping";
 
+export const handle = {
+  topbar: function ShoppingTopbar() {
+    return (
+      <>
+        <Button variant="outline">
+          <CheckIcon data-icon="inline-start" />
+          Mark trip complete
+        </Button>
+        <Button>
+          <PlusIcon data-icon="inline-start" />
+          Add item
+        </Button>
+      </>
+    );
+  },
+};
+
 export function meta() {
   return [{ title: "Shopping | Kombu" }];
 }
@@ -43,18 +60,6 @@ export default function Shopping({ loaderData }: Route.ComponentProps) {
         eyebrow="Shopping"
         title="Turn missing ingredients and low stock into a shared list."
         description="Shopping starts from recipes, inventory thresholds, scanner sessions, and direct user entry."
-        actions={
-          <>
-            <Button variant="outline">
-              <CheckIcon data-icon="inline-start" />
-              Mark trip complete
-            </Button>
-            <Button>
-              <PlusIcon data-icon="inline-start" />
-              Add item
-            </Button>
-          </>
-        }
       />
 
       <SourceNotice results={[shopping]} />

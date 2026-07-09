@@ -28,6 +28,23 @@ import {
 } from "~/lib/api/resources";
 import type { Route } from "./+types/home";
 
+export const handle = {
+  topbar: function HomeTopbar() {
+    return (
+      <>
+        <Button variant="outline">
+          <AlertTriangleIcon data-icon="inline-start" />
+          Review alerts
+        </Button>
+        <Button>
+          <PlusIcon data-icon="inline-start" />
+          Capture recipe
+        </Button>
+      </>
+    );
+  },
+};
+
 export function meta() {
   return [
     { title: "Kombu" },
@@ -58,18 +75,6 @@ export default function Home({ loaderData }: Route.ComponentProps) {
         eyebrow="Kitchen command center"
         title="Cook what people actually make, then import the universe."
         description="Kombu starts with user-cooked recipes and connects inventory, expiry alerts, shopping, scanners, imports, and AI-ready workflows."
-        actions={
-          <>
-            <Button variant="outline">
-              <AlertTriangleIcon data-icon="inline-start" />
-              Review alerts
-            </Button>
-            <Button>
-              <PlusIcon data-icon="inline-start" />
-              Capture recipe
-            </Button>
-          </>
-        }
       />
 
       <SourceNotice results={[overview, alerts, user]} />

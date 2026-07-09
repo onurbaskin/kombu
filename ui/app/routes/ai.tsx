@@ -20,6 +20,23 @@ import { Textarea } from "~/components/ui/textarea";
 import { getAiCapabilities } from "~/lib/api/resources";
 import type { Route } from "./+types/ai";
 
+export const handle = {
+  topbar: function AiTopbar() {
+    return (
+      <>
+        <Button variant="outline">
+          <SparklesIcon data-icon="inline-start" />
+          Review adapters
+        </Button>
+        <Button>
+          <SendIcon data-icon="inline-start" />
+          Save prompt
+        </Button>
+      </>
+    );
+  },
+};
+
 export function meta() {
   return [{ title: "AI Lab | Kombu" }];
 }
@@ -38,18 +55,6 @@ export default function AiLab({ loaderData }: Route.ComponentProps) {
         eyebrow="AI lab"
         title="Smart features stay provider-neutral until a self-hoster opts in."
         description="Kombu can plan meals, map imports, and reason about inventory without baking a vendor key into the project."
-        actions={
-          <>
-            <Button variant="outline">
-              <SparklesIcon data-icon="inline-start" />
-              Review adapters
-            </Button>
-            <Button>
-              <SendIcon data-icon="inline-start" />
-              Save prompt
-            </Button>
-          </>
-        }
       />
 
       <SourceNotice results={[capabilities]} />

@@ -6,6 +6,7 @@ import {
   SearchIcon,
   UploadIcon,
 } from "lucide-react";
+import { useState } from "react";
 import {
   Link,
   useNavigation,
@@ -29,6 +30,62 @@ import { Skeleton } from "~/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { getRecipeFilters, getRecipesPaginated } from "~/lib/api/resources";
 import type { Route } from "./+types/recipes";
+
+export const handle = {
+  Topbar: function RecipesTopbar() {
+    const [searchParams, setSearchParams] = useSearchParams();
+    const revalidator = useRevalidator();
+    const [searchValue, setSearchValue] = useState(
+      searchParams.get("search") ?? "",
+    );
+
+    const handleSearch = (query: string) => {
+      setSearchValue(query);
+      const next = new URLSearchParams(searchParams);
+      if (query) {
+        next.set("search", query);
+      } else {
+        next.delete("search");
+      }
+      next.delete("page");
+      setSearchParams(next, { preventScrollReset: true, replace: true });
+    };
+
+    return (
+      <>
+        <div className="relative flex-1 max-w-md">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Search recipes..."
+            value={searchValue}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => revalidator.revalidate()}
+          disabled={revalidator.state === "loading"}
+        >
+          <RefreshCwIcon
+            className={`size-4 ${revalidator.state === "loading" ? "animate-spin" : ""}`}
+          />
+        </Button>
+        <Button>
+          <PlusIcon data-icon="inline-start" />
+          New recipe
+        </Button>
+        <Button variant="outline" asChild>
+          <Link to="/settings">
+            <UploadIcon data-icon="inline-start" />
+            Import recipes
+          </Link>
+        </Button>
+      </>
+    );
+  },
+};
 
 const PER_PAGE = 24;
 
@@ -65,7 +122,6 @@ export default function Recipes({ loaderData }: Route.ComponentProps) {
   const { recipes, filters } = loaderData;
   const [searchParams, setSearchParams] = useSearchParams();
   const navigation = useNavigation();
-  const revalidator = useRevalidator();
 
   const isLoading = navigation.state === "loading";
 
@@ -114,38 +170,6 @@ export default function Recipes({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <div className="flex items-center gap-3">
-        <div className="relative flex-1 max-w-md">
-          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
-          <Input
-            placeholder="Search recipes..."
-            value={searchValue}
-            onChange={(e) => handleSearch(e.target.value)}
-            className="pl-9"
-          />
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={() => revalidator.revalidate()}
-          disabled={revalidator.state === "loading"}
-        >
-          <RefreshCwIcon
-            className={`size-4 ${revalidator.state === "loading" ? "animate-spin" : ""}`}
-          />
-        </Button>
-        <Button>
-          <PlusIcon data-icon="inline-start" />
-          New recipe
-        </Button>
-        <Button variant="outline" asChild>
-          <Link to="/settings">
-            <UploadIcon data-icon="inline-start" />
-            Import recipes
-          </Link>
-        </Button>
-      </div>
-
       <div className="flex gap-6">
         <aside className="hidden w-[260px] shrink-0 lg:block">
           <div className="sticky top-22 flex flex-col gap-4 max-h-[calc(100vh-6rem)]">
