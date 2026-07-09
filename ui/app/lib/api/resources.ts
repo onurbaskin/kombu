@@ -2,6 +2,7 @@ import {
   type ApiResult,
   type ApiSchema,
   createKombuClient,
+  getApiBaseUrl,
   withFallback,
 } from "~/lib/api/client";
 
@@ -20,6 +21,12 @@ export type ScannerCapability = ApiSchema<"ScannerCapabilityRead">;
 export type ScanSession = ApiSchema<"ScanSessionRead">;
 export type ShoppingItem = ApiSchema<"ShoppingListItemRead">;
 export type SystemOverview = ApiSchema<"SystemOverviewRead">;
+
+export type ShoppingSuggestion = {
+  item_name: string;
+  reason: string;
+  priority: string;
+};
 
 const client = createKombuClient();
 
@@ -364,4 +371,32 @@ export function createImportJob(body: {
     client.POST("/api/v1/imports/jobs", { body }),
     {} as unknown as ImportJob,
   );
+}
+
+export async function suggestShoppingItems(body: {
+  shopping_history: Record<string, string>[];
+  inventory_items: Record<string, string>[];
+  planned_recipes: Record<string, string>[];
+  frequently_cooked: string[];
+}): Promise<ApiResult<{ suggestions: ShoppingSuggestion[] }>> {
+  const baseUrl = getApiBaseUrl();
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/ai/shopping/suggest`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error(text || res.statusText);
+    }
+    const data = await res.json();
+    return { data, source: "api" };
+  } catch (e) {
+    return {
+      data: { suggestions: [] },
+      source: "fallback",
+      error: String(e),
+    };
+  }
 }
