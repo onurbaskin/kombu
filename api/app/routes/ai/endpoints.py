@@ -3,6 +3,7 @@ from typing import Annotated
 
 from api.app.config import Settings, get_settings
 from api.app.database import get_session
+from api.app.models import AiProviderConfig
 from api.app.routes.ai.schemas import (
     AiCapabilityRead,
     AiProviderConfigCreate,
@@ -14,6 +15,11 @@ from api.app.routes.ai.schemas import (
 )
 from api.app.routes.ai.utils import create_ai_suggestion, list_ai_capabilities
 from api.app.services.ai import EnhancedRecipe
+from api.app.services.provider_credentials import (
+    ProviderCredentialError,
+    encrypt_api_key,
+    normalize_model,
+)
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
 from sqlalchemy import select
@@ -24,6 +30,21 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ai", tags=["ai"])
 SessionDep = Annotated[Session, Depends(get_session)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]
+
+
+def _provider_response(config: AiProviderConfig) -> AiProviderConfigRead:
+    """Build a provider response without exposing credential material."""
+    return AiProviderConfigRead(
+        id=config.id,
+        provider=config.provider,
+        label=config.label,
+        api_key_configured=bool(config.encrypted_api_key),
+        base_url=config.base_url,
+        default_model=config.default_model,
+        is_enabled=config.is_enabled,
+        created_at=config.created_at,
+        updated_at=config.updated_at,
+    )
 
 
 class ShoppingSuggestRequest(BaseModel):
@@ -192,11 +213,9 @@ def known_providers() -> list[dict]:
 @router.get("/providers", response_model=list[AiProviderConfigRead])
 def list_providers(session: SessionDep) -> list[AiProviderConfigRead]:
     """List all configured AI providers."""
-    from api.app.models import AiProviderConfig
-
     stmt = select(AiProviderConfig).order_by(AiProviderConfig.created_at.desc())
     return [
-        AiProviderConfigRead.model_validate(c)
+        _provider_response(c)
         for c in session.scalars(stmt).all()
     ]
 
@@ -211,13 +230,20 @@ def create_provider(
     session: SessionDep,
 ) -> AiProviderConfigRead:
     """Add a new AI provider configuration."""
-    from api.app.models import AiProviderConfig
-
-    config = AiProviderConfig(**payload.model_dump())
+    try:
+        config = AiProviderConfig(
+            **payload.model_dump(exclude={"api_key", "default_model"}),
+            encrypted_api_key=encrypt_api_key(payload.api_key),
+            default_model=normalize_model(payload.provider, payload.default_model),
+        )
+    except ProviderCredentialError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        ) from exc
     session.add(config)
     session.commit()
     session.refresh(config)
-    return AiProviderConfigRead.model_validate(config)
+    return _provider_response(config)
 
 
 @router.patch("/providers/{provider_id}", response_model=AiProviderConfigRead)
@@ -227,8 +253,6 @@ def update_provider(
     session: SessionDep,
 ) -> AiProviderConfigRead:
     """Update an AI provider configuration."""
-    from api.app.models import AiProviderConfig
-
     config = session.get(AiProviderConfig, provider_id)
     if config is None:
         raise HTTPException(
@@ -236,11 +260,22 @@ def update_provider(
             detail="Provider not found.",
         )
     update_data = payload.model_dump(exclude_unset=True)
+    if "api_key" in update_data:
+        try:
+            config.encrypted_api_key = encrypt_api_key(update_data.pop("api_key"))
+        except ProviderCredentialError as exc:
+            raise HTTPException(
+                status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+            ) from exc
+    if "default_model" in update_data:
+        update_data["default_model"] = normalize_model(
+            config.provider, update_data["default_model"]
+        )
     for key, value in update_data.items():
         setattr(config, key, value)
     session.commit()
     session.refresh(config)
-    return AiProviderConfigRead.model_validate(config)
+    return _provider_response(config)
 
 
 @router.delete("/providers/{provider_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -249,8 +284,6 @@ def delete_provider(
     session: SessionDep,
 ) -> None:
     """Delete an AI provider configuration."""
-    from api.app.models import AiProviderConfig
-
     config = session.get(AiProviderConfig, provider_id)
     if config is None:
         raise HTTPException(

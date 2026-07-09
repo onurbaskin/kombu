@@ -295,7 +295,7 @@ class AiProviderConfig(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     provider: Mapped[str] = mapped_column(String(80), index=True)
     label: Mapped[str] = mapped_column(String(160))
-    api_key: Mapped[str] = mapped_column(String(512))
+    encrypted_api_key: Mapped[str] = mapped_column(Text)
     base_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     default_model: Mapped[str] = mapped_column(String(160))
     is_enabled: Mapped[bool] = mapped_column(default=True)

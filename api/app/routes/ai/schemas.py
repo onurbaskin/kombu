@@ -65,7 +65,8 @@ class AiProviderConfigRead(BaseModel):
     id: int
     provider: str
     label: str
-    api_key: str
+    api_key_configured: bool
+    api_key_hint: str | None = None
     base_url: str | None
     default_model: str
     is_enabled: bool

@@ -12,6 +12,7 @@ from sqlalchemy.orm import Session
 
 from api.app.database import SessionLocal
 from api.app.models import AiProviderConfig
+from api.app.services.provider_credentials import decrypt_api_key, normalize_model
 
 logger = logging.getLogger(__name__)
 
@@ -66,8 +67,8 @@ def _get_active_provider(session: Session) -> AiProviderConfig | None:
 def _get_client_kwargs(config: AiProviderConfig) -> dict:
     """Build kwargs for litellm.completion from a provider config."""
     kwargs: dict = {
-        "model": f"{config.provider}/{config.default_model}",
-        "api_key": config.api_key,
+        "model": normalize_model(config.provider, config.default_model),
+        "api_key": decrypt_api_key(config.encrypted_api_key),
     }
     if config.base_url:
         kwargs["api_base"] = config.base_url
