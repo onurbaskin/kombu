@@ -6,8 +6,10 @@ import logging
 import os
 from contextlib import suppress
 from pathlib import Path
+from typing import Any
 
 import kagglehub  # type: ignore[import-untyped]
+from sqlalchemy import insert
 from sqlalchemy.orm import Session
 
 from api.app.config import get_settings
@@ -67,11 +69,7 @@ def import_kaggle_dataset(session: Session, import_job_id: int) -> ImportJob:
                 total_recipes += 1
 
                 if len(batch_recipes) >= BATCH_SIZE:
-                    _flush_recipes(session, batch_recipes)
-                    _flush_ingredients_for_batch(session, batch_recipes)
-                    total_ingredients += sum(
-                        len(r.get("_ingredients", [])) for r in batch_recipes
-                    )
+                    total_ingredients += _flush_batch(session, batch_recipes)
                     batch_recipes = []
 
                 if total_recipes % 10000 == 0:
@@ -82,11 +80,7 @@ def import_kaggle_dataset(session: Session, import_job_id: int) -> ImportJob:
                     logger.info(f"Imported {total_recipes} recipes so far...")
 
             if batch_recipes:
-                _flush_recipes(session, batch_recipes)
-                _flush_ingredients_for_batch(session, batch_recipes)
-                total_ingredients += sum(
-                    len(r.get("_ingredients", [])) for r in batch_recipes
-                )
+                total_ingredients += _flush_batch(session, batch_recipes)
 
         job.total_records = total_recipes
         job.imported_records = total_recipes
@@ -99,36 +93,31 @@ def import_kaggle_dataset(session: Session, import_job_id: int) -> ImportJob:
         )
         return job
 
-    except Exception:
+    except Exception as exc:
         logger.exception(f"Import job {import_job_id} failed")
         job.status = ImportJobStatus.FAILED
-        job.error_message = str(Exception)
+        job.error_message = str(exc)
         session.merge(job)
         session.commit()
         raise
 
 
-def _flush_recipes(session: Session, batch: list[dict]) -> None:
-    mappings = [{k: v for k, v in r.items() if k != "_ingredients"} for r in batch]
-    session.bulk_insert_mappings(Recipe, mappings)
+def _flush_batch(session: Session, batch: list[dict]) -> int:
+    """Insert a batch of recipes and their ingredients. Returns ingredient count."""
+    total_ingredients = 0
+    for recipe_map in batch:
+        ingredients = recipe_map.pop("_ingredients", [])
+        stmt = insert(Recipe).values(**recipe_map)
+        result: Any = session.execute(stmt)
+        recipe_id: int = result.inserted_primary_key[0]
+
+        for ing in ingredients:
+            ing["recipe_id"] = recipe_id
+            session.execute(insert(RecipeIngredient).values(**ing))
+            total_ingredients += 1
+
     session.commit()
-
-
-def _flush_ingredients_for_batch(session: Session, batch: list[dict]) -> None:
-    recipes_inserted = batch[0].get("title") if batch else None
-    if not recipes_inserted:
-        return
-
-    all_ingredient_mappings = []
-    for recipe in batch:
-        ingredients = recipe.get("_ingredients", [])
-        if not ingredients:
-            continue
-        all_ingredient_mappings.extend(ingredients)
-
-    if all_ingredient_mappings:
-        session.bulk_insert_mappings(RecipeIngredient, all_ingredient_mappings)
-        session.commit()
+    return total_ingredients
 
 
 def _map_recipe(row: dict) -> dict:
