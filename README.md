@@ -17,6 +17,10 @@ See [.github/README.md](.github/README.md) for the fuller project overview.
 
 ```sh
 uv sync
+cp .env.example .env
+# Generate a stable encryption key before configuring AI providers in Settings.
+uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+# Set the generated value as KOMBU_ENCRYPTION_KEY in .env.
 uv run alembic -c api/alembic.ini upgrade head
 uv run uvicorn api.app.main:app --reload
 
@@ -30,3 +34,24 @@ Or run the bundled container stack:
 cp .env.example .env
 docker compose up --build
 ```
+
+## AI Provider Encryption
+
+AI providers and models are configured in **Settings → AI Providers**. Kombu
+stores provider API keys encrypted in the database, using the stable deployment
+secret in `KOMBU_ENCRYPTION_KEY`.
+
+Generate it once:
+
+```sh
+uv run python -c "from cryptography.fernet import Fernet; print(Fernet.generate_key().decode())"
+```
+
+Set the output in `.env`:
+
+```dotenv
+KOMBU_ENCRYPTION_KEY=your-generated-fernet-key
+```
+
+Keep this value stable. Changing or losing it makes previously stored provider
+keys unreadable. Do not commit `.env` or the encryption key.
