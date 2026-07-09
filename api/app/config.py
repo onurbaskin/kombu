@@ -23,6 +23,8 @@ class Settings(BaseSettings):
     ai_features_enabled: bool = False
     scanner_upload_dir: str = "var/scans"
     recipe_import_dir: str = "var/imports"
+    kaggle_username: str = ""
+    kaggle_key: str = ""
 
     model_config = SettingsConfigDict(
         env_file=".env",

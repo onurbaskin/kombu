@@ -106,6 +106,7 @@ class Recipe(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     title: Mapped[str] = mapped_column(String(240), index=True)
     summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    instructions: Mapped[str | None] = mapped_column(Text, nullable=True, default=None)
     source_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
     source_type: Mapped[RecipeSourceType] = mapped_column(
         String(40),
