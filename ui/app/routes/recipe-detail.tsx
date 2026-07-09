@@ -6,12 +6,13 @@ import {
   UsersIcon,
   WandSparklesIcon,
 } from "lucide-react";
-import { Link } from "react-router";
+import { Link, useNavigation } from "react-router";
 import { SourceNotice } from "~/components/source-notice";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
+import { Skeleton } from "~/components/ui/skeleton";
 import { getRecipe } from "~/lib/api/resources";
 import type { Route } from "./+types/recipe-detail";
 
@@ -37,6 +38,51 @@ export async function loader({ params }: Route.LoaderArgs) {
 export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
   const { recipe: recipeResult } = loaderData;
   const recipe = recipeResult.data;
+  const navigation = useNavigation();
+  const isLoading = navigation.state === "loading";
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-3xl space-y-6">
+        <Skeleton className="h-4 w-32" />
+        <Skeleton className="h-48 w-full rounded-xl" />
+        <Skeleton className="h-8 w-2/3" />
+        <Skeleton className="h-5 w-full" />
+        <div className="flex gap-3">
+          <Skeleton className="h-9 w-28" />
+          <Skeleton className="h-9 w-24" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-full" />
+          <Skeleton className="h-4 w-3/4" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!recipe.id) {
+    return (
+      <div className="mx-auto max-w-3xl">
+        <Link
+          to="/recipes"
+          className="inline-flex items-center gap-1 text-muted-foreground text-sm hover:text-foreground transition-colors mb-6"
+        >
+          <ArrowLeftIcon className="size-4" />
+          Back to recipes
+        </Link>
+        <div className="flex flex-col items-center justify-center py-20 text-center">
+          <p className="text-muted-foreground text-lg font-medium">
+            Recipe not found
+          </p>
+          <p className="text-muted-foreground text-sm mt-1">
+            This recipe may have been removed or the link is invalid.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto max-w-3xl">

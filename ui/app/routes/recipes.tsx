@@ -1,5 +1,5 @@
 import { LayoutGridIcon, ListIcon, PlusIcon, UploadIcon } from "lucide-react";
-import { useSearchParams } from "react-router";
+import { useNavigation, useSearchParams } from "react-router";
 import { PageHeader } from "~/components/page-header";
 import { RecipeCard } from "~/components/recipe-card";
 import { RecipeFilters } from "~/components/recipe-filters";
@@ -14,6 +14,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "~/components/ui/pagination";
+import { Skeleton } from "~/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import { getRecipeFilters, getRecipesPaginated } from "~/lib/api/resources";
 import type { Route } from "./+types/recipes";
@@ -52,6 +53,9 @@ export async function loader({ request }: Route.LoaderArgs) {
 export default function Recipes({ loaderData }: Route.ComponentProps) {
   const { recipes, filters } = loaderData;
   const [searchParams, setSearchParams] = useSearchParams();
+  const navigation = useNavigation();
+
+  const isLoading = navigation.state === "loading";
 
   const currentPage = Math.max(1, Number(searchParams.get("page")) || 1);
   const searchValue = searchParams.get("search") ?? "";
@@ -156,13 +160,41 @@ export default function Recipes({ loaderData }: Route.ComponentProps) {
             </ToggleGroup>
           </div>
 
-          {recipes.data && recipes.data.items.length === 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {Array.from({ length: 6 }).map((_, i) => (
+                // biome-ignore lint/suspicious/noArrayIndexKey: static skeleton placeholders
+                <div key={i} className="rounded-xl border p-4 space-y-3">
+                  <Skeleton className="h-5 w-3/4" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-1/2" />
+                  <div className="flex gap-2">
+                    <Skeleton className="h-5 w-16 rounded-full" />
+                    <Skeleton className="h-5 w-20 rounded-full" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : recipes.data && recipes.data.total === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <p className="text-muted-foreground text-lg font-medium">
+                No recipes yet
+              </p>
+              <p className="text-muted-foreground text-sm mt-1 max-w-md">
+                Your cookbook is empty. Capture your first recipe or{" "}
+                <a href="/imports" className="underline hover:text-foreground">
+                  import a recipe dataset
+                </a>{" "}
+                to get started.
+              </p>
+            </div>
+          ) : (recipes.data?.items ?? []).length === 0 ? (
             <div className="flex flex-col items-center justify-center py-20 text-center">
               <p className="text-muted-foreground text-lg font-medium">
                 No recipes found
               </p>
               <p className="text-muted-foreground text-sm mt-1">
-                Try adjusting your filters or add your first recipe.
+                Try adjusting your filters or search terms.
               </p>
             </div>
           ) : viewMode === "table" ? (
