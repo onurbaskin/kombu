@@ -10,12 +10,21 @@ export type AiProviderConfig = {
   id: number;
   provider: string;
   label: string;
-  api_key: string;
+  api_key_configured: boolean;
+  api_key_hint: string | null;
   base_url: string | null;
   default_model: string;
   is_enabled: boolean;
   created_at: string;
   updated_at: string;
+};
+
+export type AiProviderConfigUpdate = {
+  label?: string;
+  api_key?: string;
+  base_url?: string | null;
+  default_model?: string;
+  is_enabled?: boolean;
 };
 
 export type KnownProvider = {
@@ -521,7 +530,7 @@ export async function createAiProvider(body: {
 
 export async function updateAiProvider(
   id: number,
-  body: Partial<AiProviderConfig>,
+  body: AiProviderConfigUpdate,
 ): Promise<ApiResult<AiProviderConfig>> {
   try {
     const res = await fetch(`${baseUrl}/api/v1/ai/providers/${id}`, {

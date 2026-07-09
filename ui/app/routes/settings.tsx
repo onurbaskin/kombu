@@ -135,6 +135,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   const [formApiKey, setFormApiKey] = useState("");
   const [formBaseUrl, setFormBaseUrl] = useState("");
   const [formDefaultModel, setFormDefaultModel] = useState("");
+  const [providerError, setProviderError] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
   const [isCreatingImport, setIsCreatingImport] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
@@ -146,6 +147,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
     setFormApiKey("");
     setFormBaseUrl("");
     setFormDefaultModel("");
+    setProviderError(null);
     setDialogOpen(true);
   }
 
@@ -156,6 +158,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
     setFormApiKey("");
     setFormBaseUrl(provider.base_url ?? "");
     setFormDefaultModel(provider.default_model);
+    setProviderError(null);
     setDialogOpen(true);
   }
 
@@ -177,20 +180,18 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
       is_enabled: editingProvider ? undefined : true,
     };
 
-    if (editingProvider) {
-      const updateBody: Record<string, unknown> = {
-        provider: formProvider,
-        label: formLabel || formProvider,
-        default_model: formDefaultModel,
-      };
-      if (formBaseUrl !== undefined) updateBody.base_url = formBaseUrl || null;
-      if (formApiKey) updateBody.api_key = formApiKey;
-      await updateAiProvider(
-        editingProvider.id,
-        updateBody as Partial<AiProviderConfig>,
-      );
-    } else {
-      await createAiProvider(body);
+    const result = editingProvider
+      ? await updateAiProvider(editingProvider.id, {
+          label: formLabel || formProvider,
+          default_model: formDefaultModel,
+          base_url: formBaseUrl || null,
+          ...(formApiKey ? { api_key: formApiKey } : {}),
+        })
+      : await createAiProvider(body);
+
+    if (result.error) {
+      setProviderError(result.error);
+      return;
     }
 
     setDialogOpen(false);
@@ -237,48 +238,52 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   }, [jobs.data, revalidator]);
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
       <PageHeader
         eyebrow="Settings"
-        title="Self-hosting controls start visible, even while auth grows up."
-        description="This page frames deployment state, local identity, future SSO, and feature flags without exposing private infrastructure."
+        title="Settings"
+        description="Manage local services, integrations, and feature access."
       />
 
       <SourceNotice results={[overview, user, readiness, sources, jobs]} />
 
-      <div className="grid gap-4 lg:grid-cols-2">
+      <div className="flex flex-col gap-5">
         <Card>
-          <CardHeader>
+          <CardHeader className="px-5 py-4">
             <CardTitle>Deployment</CardTitle>
-            <CardDescription>
-              Environment and readiness details for operators.
-            </CardDescription>
+            <CardDescription>Local runtime status.</CardDescription>
           </CardHeader>
-          <CardContent className="grid gap-3">
-            <div className="flex items-center justify-between rounded-md border p-4">
-              <span className="font-medium">Environment</span>
-              <Badge variant="outline">{overview.data.environment}</Badge>
-            </div>
-            <div className="flex items-center justify-between rounded-md border p-4">
-              <span className="font-medium">Database</span>
-              <StatusBadge value={readiness.data.database} />
-            </div>
-            <div className="flex items-center justify-between rounded-md border p-4">
-              <span className="font-medium">Service</span>
-              <StatusBadge value={readiness.data.status} />
-            </div>
+          <CardContent className="px-5 pb-4">
+            <FieldGroup>
+              <Field orientation="horizontal">
+                <FieldContent>
+                  <FieldTitle>Environment</FieldTitle>
+                </FieldContent>
+                <Badge variant="outline">{overview.data.environment}</Badge>
+              </Field>
+              <Field orientation="horizontal">
+                <FieldContent>
+                  <FieldTitle>Database</FieldTitle>
+                </FieldContent>
+                <StatusBadge value={readiness.data.database} />
+              </Field>
+              <Field orientation="horizontal">
+                <FieldContent>
+                  <FieldTitle>Service</FieldTitle>
+                </FieldContent>
+                <StatusBadge value={readiness.data.status} />
+              </Field>
+            </FieldGroup>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="px-5 py-4">
             <div className="flex items-center justify-between">
               <div>
                 <CardTitle>AI Providers</CardTitle>
                 <CardDescription>
-                  Configure AI providers to power recipe enhancement, shopping
-                  suggestions, and inventory analysis. LiteLLM supports OpenAI,
-                  Anthropic, OpenRouter, Groq, and more.
+                  Models and credentials used by optional AI tools.
                 </CardDescription>
               </div>
               <Button size="sm" onClick={openAddDialog}>
@@ -287,7 +292,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               </Button>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-5 pb-4">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -373,7 +378,7 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                   API keys are stored encrypted via the application secret. The
                   <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
                     {" "}
-                    KOMBU_SECRET_KEY
+                    KOMBU_ENCRYPTION_KEY
                   </code>{" "}
                   environment variable is used as the encryption key.
                 </p>
@@ -383,14 +388,14 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
         </Card>
 
         <Card>
-          <CardHeader>
+          <CardHeader className="px-5 py-4">
             <CardTitle>User management</CardTitle>
             <CardDescription>
-              Local identity placeholder with room for OIDC/SAML later.
+              Current local identity and sign-in controls.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-4">
-            <div className="flex items-center gap-3 rounded-md border p-4">
+          <CardContent className="px-5 pb-4">
+            <div className="mb-3 flex items-center gap-3">
               <ShieldCheckIcon aria-hidden="true" />
               <div>
                 <p className="font-medium">{user.data.display_name}</p>
@@ -425,13 +430,13 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
       </div>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="px-5 py-4">
           <CardTitle>Feature flags</CardTitle>
           <CardDescription>
-            Public defaults keep advanced integrations explicit.
+            Availability of optional Kombu features.
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-5 pb-4">
           <FieldGroup>
             {overview.data.features.map((feature) => (
               <Field key={feature.key} orientation="horizontal" data-disabled>
@@ -451,43 +456,39 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="px-5 py-4">
           <CardTitle>AI Capabilities</CardTitle>
           <CardDescription>
-            Provider-neutral AI features are gated by the{" "}
-            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
-              KOMBU_AI_FEATURES_ENABLED
-            </code>{" "}
-            setting. Enable it to activate recipe planning, inventory insights,
-            and import assistance.
+            Features currently available to configured providers.
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col gap-3">
-          {aiCapabilities.data.map((capability) => (
-            <div key={capability.key} className="rounded-md border p-4">
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-medium">{capability.label}</span>
+        <CardContent className="px-5 pb-4">
+          <FieldGroup>
+            {aiCapabilities.data.map((capability) => (
+              <Field
+                key={capability.key}
+                orientation="horizontal"
+                data-disabled
+              >
+                <FieldContent>
+                  <FieldTitle>{capability.label}</FieldTitle>
+                  <FieldDescription>{capability.description}</FieldDescription>
+                </FieldContent>
                 <StatusBadge
                   value={capability.enabled ? "enabled" : "planned"}
                 />
-              </div>
-              <p className="mt-2 text-muted-foreground text-sm">
-                {capability.description}
-              </p>
-            </div>
-          ))}
+              </Field>
+            ))}
+          </FieldGroup>
         </CardContent>
       </Card>
 
       <Card>
-        <CardHeader>
+        <CardHeader className="px-5 py-4">
           <CardTitle>Recipe Sources</CardTitle>
-          <CardDescription>
-            Configure open-source recipe datasets to enrich your cookbook with
-            millions of recipes. Download once, browse forever.
-          </CardDescription>
+          <CardDescription>Downloadable recipe data sources.</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="px-5 pb-4">
           <Table>
             <TableHeader>
               <TableRow>
@@ -735,6 +736,11 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                 placeholder="gpt-4o-mini"
               />
             </div>
+            {providerError && (
+              <p className="text-destructive text-sm" role="alert">
+                {providerError}
+              </p>
+            )}
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setDialogOpen(false)}>
