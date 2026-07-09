@@ -6,6 +6,24 @@ import {
   withFallback,
 } from "~/lib/api/client";
 
+export type AiProviderConfig = {
+  id: number;
+  provider: string;
+  label: string;
+  api_key: string;
+  base_url: string | null;
+  default_model: string;
+  is_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export type KnownProvider = {
+  key: string;
+  label: string;
+  docs: string;
+};
+
 export type AiCapability = ApiSchema<"AiCapabilityRead">;
 export type CurrentUser = ApiSchema<"CurrentUserRead">;
 export type ExpiryAlert = ApiSchema<"ExpiryAlertRead">;
@@ -399,4 +417,76 @@ export async function suggestShoppingItems(body: {
       error: String(e),
     };
   }
+}
+
+const baseUrl = getApiBaseUrl();
+
+export async function getKnownProviders(): Promise<ApiResult<KnownProvider[]>> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/ai/providers/known`);
+    if (!res.ok) throw new Error(await res.text());
+    return { data: await res.json(), source: "api" };
+  } catch (e) {
+    return { data: [], source: "fallback", error: String(e) };
+  }
+}
+
+export async function getAiProviders(): Promise<ApiResult<AiProviderConfig[]>> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/ai/providers`);
+    if (!res.ok) throw new Error(await res.text());
+    return { data: await res.json(), source: "api" };
+  } catch (e) {
+    return { data: [], source: "fallback", error: String(e) };
+  }
+}
+
+export async function createAiProvider(body: {
+  provider: string;
+  label: string;
+  api_key: string;
+  base_url?: string | null;
+  default_model: string;
+  is_enabled?: boolean;
+}): Promise<ApiResult<AiProviderConfig>> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/ai/providers`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return { data: await res.json(), source: "api" };
+  } catch (e) {
+    return {
+      data: {} as AiProviderConfig,
+      source: "fallback",
+      error: String(e),
+    };
+  }
+}
+
+export async function updateAiProvider(
+  id: number,
+  body: Partial<AiProviderConfig>,
+): Promise<ApiResult<AiProviderConfig>> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/ai/providers/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return { data: await res.json(), source: "api" };
+  } catch (e) {
+    return {
+      data: {} as AiProviderConfig,
+      source: "fallback",
+      error: String(e),
+    };
+  }
+}
+
+export async function deleteAiProvider(id: number): Promise<void> {
+  await fetch(`${baseUrl}/api/v1/ai/providers/${id}`, { method: "DELETE" });
 }

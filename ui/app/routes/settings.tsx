@@ -4,10 +4,13 @@ import {
   FileJsonIcon,
   KeyIcon,
   Loader2Icon,
+  PencilIcon,
   PlusIcon,
   ShieldCheckIcon,
+  SparklesIcon,
+  Trash2Icon,
 } from "lucide-react";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRevalidator } from "react-router";
 import { PageHeader } from "~/components/page-header";
 import { SourceNotice } from "~/components/source-notice";
@@ -22,6 +25,14 @@ import {
   CardTitle,
 } from "~/components/ui/card";
 import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
+import {
   Field,
   FieldContent,
   FieldDescription,
@@ -29,7 +40,16 @@ import {
   FieldLabel,
   FieldTitle,
 } from "~/components/ui/field";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import { Progress } from "~/components/ui/progress";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
 import {
@@ -41,13 +61,19 @@ import {
   TableRow,
 } from "~/components/ui/table";
 import {
+  type AiProviderConfig,
+  createAiProvider,
   createImportJob,
+  deleteAiProvider,
   getAiCapabilities,
+  getAiProviders,
   getCurrentUser,
   getImportJobs,
   getImportSources,
+  getKnownProviders,
   getReadiness,
   getSystemOverview,
+  updateAiProvider,
 } from "~/lib/api/resources";
 import type { Route } from "./+types/settings";
 
@@ -56,23 +82,132 @@ export function meta() {
 }
 
 export async function loader() {
-  const [overview, user, readiness, sources, jobs, aiCapabilities] =
-    await Promise.all([
-      getSystemOverview(),
-      getCurrentUser(),
-      getReadiness(),
-      getImportSources(),
-      getImportJobs(),
-      getAiCapabilities(),
-    ]);
+  const [
+    overview,
+    user,
+    readiness,
+    sources,
+    jobs,
+    aiCapabilities,
+    knownProviders,
+    aiProviders,
+  ] = await Promise.all([
+    getSystemOverview(),
+    getCurrentUser(),
+    getReadiness(),
+    getImportSources(),
+    getImportJobs(),
+    getAiCapabilities(),
+    getKnownProviders(),
+    getAiProviders(),
+  ]);
 
-  return { overview, user, readiness, sources, jobs, aiCapabilities };
+  return {
+    overview,
+    user,
+    readiness,
+    sources,
+    jobs,
+    aiCapabilities,
+    knownProviders,
+    aiProviders,
+  };
 }
 
 export default function Settings({ loaderData }: Route.ComponentProps) {
-  const { overview, user, readiness, sources, jobs, aiCapabilities } =
-    loaderData;
+  const {
+    overview,
+    user,
+    readiness,
+    sources,
+    jobs,
+    aiCapabilities,
+    knownProviders,
+    aiProviders,
+  } = loaderData;
   const revalidator = useRevalidator();
+
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [editingProvider, setEditingProvider] =
+    useState<AiProviderConfig | null>(null);
+  const [formProvider, setFormProvider] = useState("");
+  const [formLabel, setFormLabel] = useState("");
+  const [formApiKey, setFormApiKey] = useState("");
+  const [formBaseUrl, setFormBaseUrl] = useState("");
+  const [formDefaultModel, setFormDefaultModel] = useState("");
+  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+
+  function openAddDialog() {
+    setEditingProvider(null);
+    setFormProvider("");
+    setFormLabel("");
+    setFormApiKey("");
+    setFormBaseUrl("");
+    setFormDefaultModel("");
+    setDialogOpen(true);
+  }
+
+  function openEditDialog(provider: AiProviderConfig) {
+    setEditingProvider(provider);
+    setFormProvider(provider.provider);
+    setFormLabel(provider.label);
+    setFormApiKey("");
+    setFormBaseUrl(provider.base_url ?? "");
+    setFormDefaultModel(provider.default_model);
+    setDialogOpen(true);
+  }
+
+  function handleProviderTypeChange(value: string) {
+    setFormProvider(value);
+    const known = knownProviders.data.find((p) => p.key === value);
+    if (known && !formLabel) {
+      setFormLabel(known.label);
+    }
+  }
+
+  async function handleSave() {
+    const body = {
+      provider: formProvider,
+      label: formLabel || formProvider,
+      api_key: formApiKey,
+      base_url: formBaseUrl || null,
+      default_model: formDefaultModel,
+      is_enabled: editingProvider ? undefined : true,
+    };
+
+    if (editingProvider) {
+      const updateBody: Record<string, unknown> = {
+        provider: formProvider,
+        label: formLabel || formProvider,
+        default_model: formDefaultModel,
+      };
+      if (formBaseUrl !== undefined) updateBody.base_url = formBaseUrl || null;
+      if (formApiKey) updateBody.api_key = formApiKey;
+      await updateAiProvider(
+        editingProvider.id,
+        updateBody as Partial<AiProviderConfig>,
+      );
+    } else {
+      await createAiProvider(body);
+    }
+
+    setDialogOpen(false);
+    revalidator.revalidate();
+  }
+
+  async function handleToggleEnabled(
+    provider: AiProviderConfig,
+    checked: boolean,
+  ) {
+    await updateAiProvider(provider.id, { is_enabled: checked });
+    revalidator.revalidate();
+  }
+
+  async function handleDelete(id: number) {
+    await deleteAiProvider(id);
+    setDeleteConfirmId(null);
+    revalidator.revalidate();
+  }
 
   useEffect(() => {
     const hasRunningJobs = jobs.data.some((j) => j.status === "running");
@@ -112,6 +247,118 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               <span className="font-medium">Service</span>
               <StatusBadge value={readiness.data.status} />
             </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>AI Providers</CardTitle>
+                <CardDescription>
+                  Configure AI providers to power recipe enhancement, shopping
+                  suggestions, and inventory analysis. LiteLLM supports OpenAI,
+                  Anthropic, OpenRouter, Groq, and more.
+                </CardDescription>
+              </div>
+              <Button size="sm" onClick={openAddDialog}>
+                <PlusIcon data-icon="inline-start" />
+                Add Provider
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Provider</TableHead>
+                  <TableHead>Model</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-[100px]">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {aiProviders.data.length === 0 ? (
+                  <TableRow>
+                    <TableCell colSpan={4} className="text-center">
+                      <span className="text-muted-foreground text-sm">
+                        No AI providers configured yet. Add one to get started.
+                      </span>
+                    </TableCell>
+                  </TableRow>
+                ) : (
+                  aiProviders.data.map((provider) => (
+                    <TableRow key={provider.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <SparklesIcon className="size-4 text-muted-foreground" />
+                          <div className="flex flex-col">
+                            <span className="font-medium text-sm">
+                              {provider.label}
+                            </span>
+                            <span className="text-muted-foreground text-xs">
+                              {provider.provider}
+                            </span>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                          {provider.default_model}
+                        </code>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Switch
+                            checked={provider.is_enabled}
+                            onCheckedChange={(checked) =>
+                              handleToggleEnabled(provider, checked)
+                            }
+                            aria-label={`Toggle ${provider.label}`}
+                          />
+                          <span className="text-muted-foreground text-xs">
+                            {provider.is_enabled ? "Enabled" : "Disabled"}
+                          </span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => openEditDialog(provider)}
+                            aria-label={`Edit ${provider.label}`}
+                          >
+                            <PencilIcon />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon-sm"
+                            onClick={() => setDeleteConfirmId(provider.id)}
+                            aria-label={`Delete ${provider.label}`}
+                          >
+                            <Trash2Icon />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))
+                )}
+              </TableBody>
+            </Table>
+
+            {aiProviders.data.length > 0 && (
+              <div className="mt-4 rounded-md border bg-muted/30 p-3">
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  API keys are stored encrypted via the application secret. The
+                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+                    {" "}
+                    KOMBU_SECRET_KEY
+                  </code>{" "}
+                  environment variable is used as the encryption key.
+                </p>
+              </div>
+            )}
           </CardContent>
         </Card>
 
@@ -390,6 +637,128 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {editingProvider ? "Edit Provider" : "Add AI Provider"}
+            </DialogTitle>
+            <DialogDescription>
+              Configure an AI provider for LiteLLM. API keys are encrypted at
+              rest.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="provider-type">Provider Type</Label>
+              <Select
+                value={formProvider}
+                onValueChange={handleProviderTypeChange}
+                disabled={!!editingProvider}
+              >
+                <SelectTrigger id="provider-type" className="w-full">
+                  <SelectValue placeholder="Select a provider..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {knownProviders.data.map((p) => (
+                    <SelectItem key={p.key} value={p.key}>
+                      {p.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="provider-label">Label</Label>
+              <Input
+                id="provider-label"
+                value={formLabel}
+                onChange={(e) => setFormLabel(e.target.value)}
+                placeholder="My OpenAI Account"
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="provider-api-key">API Key</Label>
+              <Input
+                id="provider-api-key"
+                type="password"
+                value={formApiKey}
+                onChange={(e) => setFormApiKey(e.target.value)}
+                placeholder={
+                  editingProvider ? "Leave blank to keep current" : "sk-..."
+                }
+              />
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="provider-base-url">Base URL (optional)</Label>
+              <Input
+                id="provider-base-url"
+                value={formBaseUrl}
+                onChange={(e) => setFormBaseUrl(e.target.value)}
+                placeholder="https://api.openai.com/v1"
+              />
+              <p className="text-muted-foreground text-xs">
+                Custom endpoint for proxies like OpenRouter or LiteLLM.
+              </p>
+            </div>
+            <div className="flex flex-col gap-2">
+              <Label htmlFor="provider-default-model">Default Model</Label>
+              <Input
+                id="provider-default-model"
+                value={formDefaultModel}
+                onChange={(e) => setFormDefaultModel(e.target.value)}
+                placeholder="gpt-4o-mini"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSave}
+              disabled={
+                !formProvider ||
+                !formDefaultModel ||
+                (!editingProvider && !formApiKey)
+              }
+            >
+              {editingProvider ? "Save Changes" : "Add Provider"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={deleteConfirmId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteConfirmId(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Provider</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to remove this provider? Any features using
+              it will stop working until another provider is configured.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() =>
+                deleteConfirmId !== null && handleDelete(deleteConfirmId)
+              }
+            >
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
