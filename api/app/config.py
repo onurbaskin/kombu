@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import computed_field
+from pydantic import Field, computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -19,8 +19,8 @@ class Settings(BaseSettings):
     ai_features_enabled: bool = False
     scanner_upload_dir: str = "var/scans"
     recipe_import_dir: str = "var/imports"
-    kaggle_username: str = ""
-    kaggle_key: str = ""
+    kaggle_username: str = Field(default="", alias="KAGGLE_USERNAME")
+    kaggle_key: str = Field(default="", alias="KAGGLE_KEY")
 
     model_config = SettingsConfigDict(
         env_file=".env",
