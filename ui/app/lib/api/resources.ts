@@ -369,6 +369,17 @@ export function getScanSessions(): Promise<ApiResult<ScanSession[]>> {
   return withFallback(client.GET("/api/v1/scanner/sessions"), []);
 }
 
+export function createScanSession(body: {
+  scan_type: string;
+  device_hint?: string | null;
+  raw_payload?: string | null;
+}): Promise<ApiResult<ScanSession>> {
+  return withFallback(
+    client.POST("/api/v1/scanner/sessions", { body }),
+    {} as ScanSession,
+  );
+}
+
 export function getAiCapabilities(): Promise<ApiResult<AiCapability[]>> {
   return withFallback(
     client.GET("/api/v1/ai/capabilities"),
