@@ -1,65 +1,114 @@
-import { PlusIcon, WandSparklesIcon } from "lucide-react";
+import { LayoutGridIcon, ListIcon, PlusIcon, UploadIcon } from "lucide-react";
+import { useSearchParams } from "react-router";
 import { PageHeader } from "~/components/page-header";
+import { RecipeCard } from "~/components/recipe-card";
+import { RecipeFilters } from "~/components/recipe-filters";
+import { RecipeTable } from "~/components/recipe-table";
 import { SourceNotice } from "~/components/source-notice";
-import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
-import {
-  Empty,
-  EmptyContent,
-  EmptyDescription,
-  EmptyHeader,
-  EmptyMedia,
-  EmptyTitle,
-} from "~/components/ui/empty";
-import {
-  Field,
-  FieldDescription,
-  FieldGroup,
-  FieldLabel,
-} from "~/components/ui/field";
-import { Input } from "~/components/ui/input";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
-import { Textarea } from "~/components/ui/textarea";
-import { getRecipes } from "~/lib/api/resources";
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "~/components/ui/pagination";
+import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
+import { getRecipeFilters, getRecipesPaginated } from "~/lib/api/resources";
 import type { Route } from "./+types/recipes";
+
+const PER_PAGE = 24;
 
 export function meta() {
   return [{ title: "Recipes | Kombu" }];
 }
 
-export async function loader() {
-  const recipes = await getRecipes();
-  return { recipes };
+export async function loader({ request }: Route.LoaderArgs) {
+  const url = new URL(request.url);
+  const search = url.searchParams.get("search") ?? undefined;
+  const cuisine = url.searchParams.get("cuisine") ?? undefined;
+  const source_type = url.searchParams.get("source_type") ?? undefined;
+  const sort_by_term = url.searchParams.get("sort_by") ?? "updated_at";
+  const sort_order_term = url.searchParams.get("sort_order") ?? "desc";
+  const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
+
+  const [recipesResult, filtersResult] = await Promise.all([
+    getRecipesPaginated({
+      skip: (page - 1) * PER_PAGE,
+      limit: PER_PAGE,
+      search,
+      cuisine,
+      source_type,
+      sort_by: sort_by_term,
+      sort_order: sort_order_term,
+    }),
+    getRecipeFilters(),
+  ]);
+
+  return { recipes: recipesResult, filters: filtersResult };
 }
 
 export default function Recipes({ loaderData }: Route.ComponentProps) {
-  const { recipes } = loaderData;
+  const { recipes, filters } = loaderData;
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  const currentPage = Math.max(1, Number(searchParams.get("page")) || 1);
+  const searchValue = searchParams.get("search") ?? "";
+  const activeCuisine = searchParams.get("cuisine") ?? undefined;
+  const activeSourceType = searchParams.get("source_type") ?? undefined;
+  const viewMode = searchParams.get("view") ?? "grid";
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil((recipes.data?.total ?? 0) / PER_PAGE),
+  );
+
+  const updateParam = (key: string, value: string | null) => {
+    const next = new URLSearchParams(searchParams);
+    if (value) {
+      next.set(key, value);
+    } else {
+      next.delete(key);
+    }
+    if (key !== "page" && key !== "view") {
+      next.delete("page");
+    }
+    setSearchParams(next, { preventScrollReset: true });
+  };
+
+  const handleSearch = (query: string) => {
+    const next = new URLSearchParams(searchParams);
+    if (query) {
+      next.set("search", query);
+    } else {
+      next.delete("search");
+    }
+    next.delete("page");
+    setSearchParams(next, { preventScrollReset: true, replace: true });
+  };
+
+  const buildHref = (overrides: Record<string, string>) => {
+    const next = new URLSearchParams(searchParams);
+    for (const [key, value] of Object.entries(overrides)) {
+      next.set(key, value);
+    }
+    return `?${next.toString()}`;
+  };
 
   return (
     <div className="flex flex-col gap-6">
       <PageHeader
         eyebrow="Cookbook"
-        title="Recipes should start with what users actually cook."
-        description="Capture house recipes first, then import datasets and web recipes when a cook asks for more options."
+        title="Recipes"
+        description="Browse, search, and filter your recipe collection."
         actions={
           <>
-            <Button variant="outline">
-              <WandSparklesIcon data-icon="inline-start" />
-              Suggest from inventory
+            <Button variant="outline" asChild>
+              <a href="/imports">
+                <UploadIcon data-icon="inline-start" />
+                Import recipes
+              </a>
             </Button>
             <Button>
               <PlusIcon data-icon="inline-start" />
@@ -69,103 +118,121 @@ export default function Recipes({ loaderData }: Route.ComponentProps) {
         }
       />
 
-      <SourceNotice results={[recipes]} />
+      <SourceNotice results={[recipes, filters]} />
 
-      <div className="grid gap-4 xl:grid-cols-[0.8fr_1.2fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Capture recipe</CardTitle>
-            <CardDescription>
-              A first-pass layout for manual capture, scanner handoff, or import
-              review.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="recipe-title">Title</FieldLabel>
-                <Input
-                  id="recipe-title"
-                  placeholder="Weeknight soup"
-                  readOnly
-                />
-                <FieldDescription>
-                  Mutations will connect to the FastAPI recipe endpoints next.
-                </FieldDescription>
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="recipe-summary">Notes</FieldLabel>
-                <Textarea
-                  id="recipe-summary"
-                  placeholder="What makes this recipe yours?"
-                  readOnly
-                />
-              </Field>
-            </FieldGroup>
-          </CardContent>
-        </Card>
+      <div className="flex gap-6">
+        <aside className="hidden w-[260px] shrink-0 lg:block">
+          <div className="sticky top-22 flex flex-col gap-4 max-h-[calc(100vh-6rem)]">
+            <RecipeFilters
+              filters={filters.data}
+              activeFilters={{
+                cuisine: activeCuisine,
+                source_type: activeSourceType,
+                search: searchValue || undefined,
+              }}
+              onFilterChange={updateParam}
+              onSearch={handleSearch}
+              searchValue={searchValue}
+            />
+          </div>
+        </aside>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Recipe database</CardTitle>
-            <CardDescription>
-              User recipes, imported recipes, web recipes, and future AI drafts
-              share one API contract.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {recipes.data.length === 0 ? (
-              <Empty>
-                <EmptyHeader>
-                  <EmptyMedia variant="icon">
-                    <PlusIcon aria-hidden="true" />
-                  </EmptyMedia>
-                  <EmptyTitle>No recipes yet</EmptyTitle>
-                  <EmptyDescription>
-                    Capture the first cooked recipe or queue an import source.
-                  </EmptyDescription>
-                </EmptyHeader>
-                <EmptyContent>
-                  <Button>Capture first recipe</Button>
-                </EmptyContent>
-              </Empty>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Recipe</TableHead>
-                    <TableHead>Source</TableHead>
-                    <TableHead>Serves</TableHead>
-                    <TableHead>Ingredients</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {recipes.data.map((recipe) => (
-                    <TableRow key={recipe.id}>
-                      <TableCell>
-                        <div className="flex flex-col gap-1">
-                          <span className="font-medium">{recipe.title}</span>
-                          <span className="text-muted-foreground text-sm">
-                            {recipe.summary ?? "No summary yet"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          variant={recipe.is_favorite ? "default" : "outline"}
-                        >
-                          {recipe.source_type}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{recipe.yield_servings ?? "Unset"}</TableCell>
-                      <TableCell>{recipe.ingredients.length}</TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center justify-between mb-4">
+            <p className="text-muted-foreground text-sm">
+              {recipes.data?.total ?? 0} recipes found
+            </p>
+            <ToggleGroup
+              type="single"
+              value={viewMode}
+              onValueChange={(v) => v && updateParam("view", v)}
+            >
+              <ToggleGroupItem value="grid" aria-label="Grid view">
+                <LayoutGridIcon className="size-4" />
+              </ToggleGroupItem>
+              <ToggleGroupItem value="table" aria-label="Table view">
+                <ListIcon className="size-4" />
+              </ToggleGroupItem>
+            </ToggleGroup>
+          </div>
+
+          {recipes.data && recipes.data.items.length === 0 ? (
+            <div className="flex flex-col items-center justify-center py-20 text-center">
+              <p className="text-muted-foreground text-lg font-medium">
+                No recipes found
+              </p>
+              <p className="text-muted-foreground text-sm mt-1">
+                Try adjusting your filters or add your first recipe.
+              </p>
+            </div>
+          ) : viewMode === "table" ? (
+            <RecipeTable recipes={recipes.data?.items ?? []} />
+          ) : (
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
+              {(recipes.data?.items ?? []).map((recipe) => (
+                <RecipeCard key={recipe.id} recipe={recipe} />
+              ))}
+            </div>
+          )}
+
+          {totalPages > 1 && (
+            <Pagination className="mt-6">
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    href={buildHref({
+                      page: String(Math.max(1, currentPage - 1)),
+                    })}
+                    aria-disabled={currentPage <= 1}
+                    tabIndex={currentPage <= 1 ? -1 : undefined}
+                    className={
+                      currentPage <= 1 ? "pointer-events-none opacity-50" : ""
+                    }
+                  />
+                </PaginationItem>
+
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
+                  }
+
+                  return (
+                    <PaginationItem key={pageNum}>
+                      <PaginationLink
+                        href={buildHref({ page: String(pageNum) })}
+                        isActive={pageNum === currentPage}
+                      >
+                        {pageNum}
+                      </PaginationLink>
+                    </PaginationItem>
+                  );
+                })}
+
+                <PaginationItem>
+                  <PaginationNext
+                    href={buildHref({
+                      page: String(Math.min(totalPages, currentPage + 1)),
+                    })}
+                    aria-disabled={currentPage >= totalPages}
+                    tabIndex={currentPage >= totalPages ? -1 : undefined}
+                    className={
+                      currentPage >= totalPages
+                        ? "pointer-events-none opacity-50"
+                        : ""
+                    }
+                  />
+                </PaginationItem>
+              </PaginationContent>
+            </Pagination>
+          )}
+        </div>
       </div>
     </div>
   );
