@@ -39,8 +39,10 @@ import {
   PaginationPrevious,
 } from "~/components/ui/pagination";
 import { Skeleton } from "~/components/ui/skeleton";
+import { Textarea } from "~/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import {
+  createRecipe,
   getRecipeFilters,
   getRecipesPaginated,
   importRecipeFromUrl,
@@ -59,6 +61,12 @@ export const handle = {
     const [importUrl, setImportUrl] = useState("");
     const [importError, setImportError] = useState<string | null>(null);
     const [isImporting, setIsImporting] = useState(false);
+    const [newRecipeOpen, setNewRecipeOpen] = useState(false);
+    const [newRecipeTitle, setNewRecipeTitle] = useState("");
+    const [newRecipeImageUrl, setNewRecipeImageUrl] = useState("");
+    const [newRecipeIngredients, setNewRecipeIngredients] = useState("");
+    const [newRecipeError, setNewRecipeError] = useState<string | null>(null);
+    const [isCreatingRecipe, setIsCreatingRecipe] = useState(false);
 
     const handleSearch = (query: string) => {
       setSearchValue(query);
@@ -104,6 +112,32 @@ export const handle = {
       navigate(`/recipes/${recipeId}`);
     };
 
+    const handleCreateRecipe = async (
+      event: React.FormEvent<HTMLFormElement>,
+    ) => {
+      event.preventDefault();
+      setIsCreatingRecipe(true);
+      setNewRecipeError(null);
+      const result = await createRecipe({
+        title: newRecipeTitle,
+        image_url: newRecipeImageUrl || null,
+        source_type: "user",
+        is_favorite: false,
+        ingredients: newRecipeIngredients
+          .split("\n")
+          .map((name) => name.trim())
+          .filter(Boolean)
+          .map((name) => ({ name })),
+      });
+      setIsCreatingRecipe(false);
+      if (result.error || !result.data.id) {
+        setNewRecipeError(result.error ?? "Unable to create the recipe.");
+        return;
+      }
+      setNewRecipeOpen(false);
+      navigate(`/recipes/${result.data.id}`);
+    };
+
     return (
       <>
         <div className="relative min-w-0 flex-1 max-w-md">
@@ -131,7 +165,7 @@ export const handle = {
           <span className="hidden sm:inline">Import from URL</span>
           <span className="sr-only sm:hidden">Import from URL</span>
         </Button>
-        <Button>
+        <Button onClick={() => setNewRecipeOpen(true)}>
           <PlusIcon data-icon="inline-start" />
           <span className="hidden sm:inline">New recipe</span>
           <span className="sr-only sm:hidden">New recipe</span>
@@ -204,6 +238,79 @@ export const handle = {
                     />
                   )}
                   Import recipe
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={newRecipeOpen} onOpenChange={setNewRecipeOpen}>
+          <DialogContent>
+            <form onSubmit={handleCreateRecipe}>
+              <DialogHeader>
+                <DialogTitle>New recipe</DialogTitle>
+                <DialogDescription>
+                  Start with the essentials. You can add more detail from the
+                  recipe page later.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex flex-col gap-4 py-4">
+                <div>
+                  <Label htmlFor="new-recipe-title">Title</Label>
+                  <Input
+                    id="new-recipe-title"
+                    value={newRecipeTitle}
+                    onChange={(event) => setNewRecipeTitle(event.target.value)}
+                    required
+                    autoFocus
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="new-recipe-image">Image URL</Label>
+                  <Input
+                    id="new-recipe-image"
+                    type="url"
+                    placeholder="https://…"
+                    value={newRecipeImageUrl}
+                    onChange={(event) =>
+                      setNewRecipeImageUrl(event.target.value)
+                    }
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="new-recipe-ingredients">Ingredients</Label>
+                  <Textarea
+                    id="new-recipe-ingredients"
+                    placeholder="One ingredient per line"
+                    value={newRecipeIngredients}
+                    onChange={(event) =>
+                      setNewRecipeIngredients(event.target.value)
+                    }
+                  />
+                </div>
+                {newRecipeError && (
+                  <p className="text-destructive text-sm" role="alert">
+                    {newRecipeError}
+                  </p>
+                )}
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setNewRecipeOpen(false)}
+                  disabled={isCreatingRecipe}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isCreatingRecipe}>
+                  {isCreatingRecipe && (
+                    <Loader2Icon
+                      data-icon="inline-start"
+                      className="animate-spin"
+                    />
+                  )}
+                  Create recipe
                 </Button>
               </DialogFooter>
             </form>
@@ -287,6 +394,10 @@ export default function Recipes({ loaderData }: Route.ComponentProps) {
     setSearchParams(next, { preventScrollReset: true, replace: true });
   };
 
+  const clearFilters = () => {
+    setSearchParams(new URLSearchParams(), { preventScrollReset: true });
+  };
+
   const buildHref = (overrides: Record<string, string>) => {
     const next = new URLSearchParams(searchParams);
     for (const [key, value] of Object.entries(overrides)) {
@@ -308,6 +419,7 @@ export default function Recipes({ loaderData }: Route.ComponentProps) {
                 search: searchValue || undefined,
               }}
               onFilterChange={updateParam}
+              onClear={clearFilters}
               onSearch={handleSearch}
               searchValue={searchValue}
             />

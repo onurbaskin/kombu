@@ -14,6 +14,7 @@ interface RecipeFiltersProps {
     search?: string;
   };
   onFilterChange: (key: string, value: string | null) => void;
+  onClear: () => void;
   onSearch: (query: string) => void;
   searchValue: string;
 }
@@ -22,6 +23,7 @@ export function RecipeFilters({
   filters,
   activeFilters,
   onFilterChange,
+  onClear,
   onSearch,
   searchValue,
 }: RecipeFiltersProps) {
@@ -104,11 +106,7 @@ export function RecipeFilters({
             variant="ghost"
             size="sm"
             className="w-full"
-            onClick={() => {
-              onFilterChange("cuisine", null);
-              onFilterChange("source_type", null);
-              onSearch("");
-            }}
+            onClick={onClear}
           >
             <XIcon className="size-3 mr-1" />
             Clear all filters
