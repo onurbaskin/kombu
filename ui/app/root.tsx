@@ -65,7 +65,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-background">
       <div className="grid min-h-screen lg:grid-cols-[17rem_1fr]">
-        <aside className="hidden border-sidebar-border border-r bg-sidebar lg:flex lg:flex-col">
+        <aside className="hidden border-sidebar-border border-r bg-sidebar lg:flex lg:flex-col lg:sticky lg:top-0 lg:h-screen">
           <div className="flex h-16 items-center gap-3 px-5">
             <div className="flex size-9 items-center justify-center rounded-md bg-sidebar-primary text-sidebar-primary-foreground">
               <SoupIcon aria-hidden="true" />
