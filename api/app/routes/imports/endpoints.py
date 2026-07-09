@@ -1,6 +1,7 @@
 import threading
 from typing import Annotated
 
+from api.app.config import get_settings
 from api.app.database import SessionLocal, get_session
 from api.app.routes.imports.schemas import (
     ImportJobCreate,
@@ -12,7 +13,7 @@ from api.app.routes.imports.utils import (
     list_import_jobs,
     list_import_sources,
 )
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/imports", tags=["imports"])
@@ -48,11 +49,23 @@ def create_job(
     session: SessionDep,
 ) -> ImportJobRead:
     """Create an import job and execute it in the background."""
+    if payload.source_type != "dataset":
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=f"Import source type '{payload.source_type}' is not available yet.",
+        )
+
+    settings = get_settings()
+    if not settings.kaggle_username or not settings.kaggle_key:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="Kaggle credentials must be configured before importing datasets.",
+        )
+
     job = create_import_job(session, payload)
-    if payload.source_type == "dataset":
-        threading.Thread(
-            target=_run_import_background,
-            args=(job.id,),
-            daemon=True,
-        ).start()
+    threading.Thread(
+        target=_run_import_background,
+        args=(job.id,),
+        daemon=True,
+    ).start()
     return ImportJobRead.model_validate(job)

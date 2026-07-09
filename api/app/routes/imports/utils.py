@@ -23,22 +23,19 @@ def list_import_sources() -> list[ImportSourceRead]:
             key="open-recipe-json",
             label="Open recipe JSON",
             source_type="json",
-            description="Generic JSON recipe bundles with a documented mapping step.",
-            ready_for_import=True,
+            description=(
+                "Generic JSON recipe bundles. File upload and field mapping are "
+                "not available yet."
+            ),
+            ready_for_import=False,
         ),
         ImportSourceRead(
             key="csv-inventory",
             label="Inventory CSV",
             source_type="csv",
-            description="Pantry, fridge, freezer, and shopping inventory CSV imports.",
-            ready_for_import=True,
-        ),
-        ImportSourceRead(
-            key="website-recipe",
-            label="Website recipe capture",
-            source_type="web",
             description=(
-                "URL-based imports designed for future recipe extraction workers."
+                "Pantry, fridge, freezer, and shopping inventory CSV files. "
+                "File upload and column mapping are not available yet."
             ),
             ready_for_import=False,
         ),
