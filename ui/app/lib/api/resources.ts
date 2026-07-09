@@ -99,60 +99,6 @@ const fallbackUser: CurrentUser = {
 
 const timestamp = "2026-07-04T09:00:00Z";
 
-const fallbackRecipes: Recipe[] = [
-  {
-    id: 1,
-    title: "Weeknight lentil bowl",
-    summary:
-      "A pantry-first template that proves user-cooked recipes come first.",
-    source_url: null,
-    source_type: "user",
-    cuisine: "Everyday",
-    yield_servings: 2,
-    prep_minutes: 10,
-    cook_minutes: 25,
-    is_favorite: true,
-    instructions: null,
-    created_at: timestamp,
-    updated_at: timestamp,
-    ingredients: [
-      {
-        id: 1,
-        name: "Lentils",
-        quantity: 1,
-        unit: "cup",
-        note: null,
-        position: 0,
-      },
-      {
-        id: 2,
-        name: "Greens",
-        quantity: 2,
-        unit: "handfuls",
-        note: "Use what expires first.",
-        position: 1,
-      },
-    ],
-  },
-  {
-    id: 2,
-    title: "Scanner-to-shopping soup",
-    summary:
-      "A placeholder recipe for testing scanner, inventory, and shopping links.",
-    source_url: null,
-    source_type: "user",
-    cuisine: "Batch cooking",
-    yield_servings: 4,
-    prep_minutes: 15,
-    cook_minutes: 35,
-    is_favorite: false,
-    instructions: null,
-    created_at: timestamp,
-    updated_at: timestamp,
-    ingredients: [],
-  },
-];
-
 const fallbackInventory: InventoryItem[] = [
   {
     id: 1,
@@ -303,8 +249,8 @@ export function getReadiness(): Promise<ApiResult<Readiness>> {
 
 export async function getRecipes(): Promise<ApiResult<Recipe[]>> {
   const response = await withFallback(client.GET("/api/v1/recipes"), {
-    items: fallbackRecipes,
-    total: fallbackRecipes.length,
+    items: [],
+    total: 0,
     page: 1,
     per_page: 50,
   } as RecipeListResponse);
@@ -375,8 +321,8 @@ export function getRecipesPaginated(params?: {
   return withFallback(
     client.GET("/api/v1/recipes", { params: { query: params } }),
     {
-      items: fallbackRecipes,
-      total: fallbackRecipes.length,
+      items: [],
+      total: 0,
       page: 1,
       per_page: 50,
     } as RecipeListResponse,
@@ -385,7 +331,7 @@ export function getRecipesPaginated(params?: {
 
 export function getRecipeFilters(): Promise<ApiResult<RecipeFilterValues>> {
   return withFallback(client.GET("/api/v1/recipes/filters"), {
-    cuisines: ["Everyday", "Batch cooking"],
+    cuisines: [],
     source_types: ["user", "import", "web", "ai"],
     max_prep_minutes: null,
     max_cook_minutes: null,
@@ -397,7 +343,7 @@ export function getRecipe(id: number): Promise<ApiResult<Recipe>> {
     client.GET("/api/v1/recipes/{recipe_id}", {
       params: { path: { recipe_id: id } },
     }),
-    fallbackRecipes[0] ?? ({} as unknown as Recipe),
+    {} as unknown as Recipe,
   );
 }
 
