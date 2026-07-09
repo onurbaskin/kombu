@@ -26,6 +26,7 @@ class RecipeCreate(BaseModel):
 
     title: str = Field(min_length=1, max_length=240)
     summary: str | None = None
+    image_url: str | None = Field(default=None, max_length=2048)
     instructions: str | None = None
     source_url: str | None = Field(default=None, max_length=1024)
     source_type: RecipeSourceType = RecipeSourceType.USER
@@ -43,6 +44,7 @@ class RecipeRead(BaseModel):
     id: int
     title: str
     summary: str | None
+    image_url: str | None
     instructions: str | None
     source_url: str | None
     source_type: RecipeSourceType

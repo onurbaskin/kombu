@@ -680,6 +680,18 @@
             ],
             "title": "Cuisine"
           },
+          "image_url": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
           "ingredients": {
             "items": {
               "$ref": "#/components/schemas/RecipeIngredientCreate"
@@ -994,6 +1006,17 @@
             "title": "Id",
             "type": "integer"
           },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
           "ingredients": {
             "items": {
               "$ref": "#/components/schemas/RecipeIngredientRead"
@@ -1077,6 +1100,7 @@
           "id",
           "title",
           "summary",
+          "image_url",
           "instructions",
           "source_url",
           "source_type",
@@ -1719,7 +1743,7 @@
         ]
       },
       "post": {
-        "description": "Create an import job and optionally execute it.",
+        "description": "Create an import job and execute it in the background.",
         "operationId": "create_job_api_v1_imports_jobs_post",
         "requestBody": {
           "content": {

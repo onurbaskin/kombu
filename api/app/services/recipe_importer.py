@@ -122,11 +122,19 @@ def _flush_batch(session: Session, batch: list[dict]) -> int:
 
 def _map_recipe(row: dict) -> dict:
     """Map a CSV row to a Recipe dict for bulk insert."""
+    source_url = row.get("link") or row.get("source_url") or None
+    if source_url and "://" not in source_url:
+        source_url = f"https://{source_url}"
+
     recipe: dict = {
         "title": (row.get("title") or row.get("name") or "").strip()[:240],
         "source_type": "import",
-        "source_url": row.get("source_url") or row.get("link") or None,
+        "source_url": source_url,
     }
+
+    image_url = row.get("image_url") or row.get("image") or row.get("photo_url")
+    if image_url:
+        recipe["image_url"] = image_url.strip()[:2048]
 
     instructions = row.get("instructions") or row.get("directions") or row.get("steps")
     if instructions:
