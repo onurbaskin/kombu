@@ -490,3 +490,34 @@ export async function updateAiProvider(
 export async function deleteAiProvider(id: number): Promise<void> {
   await fetch(`${baseUrl}/api/v1/ai/providers/${id}`, { method: "DELETE" });
 }
+
+export async function importRecipeFromUrl(
+  url: string,
+): Promise<ApiResult<Recipe | null>> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/recipes/import-url`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) {
+      const payload: unknown = await res.json().catch(() => null);
+      const error =
+        typeof payload === "object" &&
+        payload !== null &&
+        "detail" in payload &&
+        typeof payload.detail === "string"
+          ? payload.detail
+          : res.statusText || "Unable to import the recipe.";
+      return { data: null, source: "fallback", error };
+    }
+    const data = await res.json();
+    return { data, source: "api" };
+  } catch (e) {
+    return {
+      data: null,
+      source: "fallback",
+      error: e instanceof Error ? e.message : "Unable to import the recipe.",
+    };
+  }
+}

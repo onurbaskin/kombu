@@ -1,6 +1,8 @@
 import {
   LayoutGridIcon,
+  Link2Icon,
   ListIcon,
+  Loader2Icon,
   PlusIcon,
   RefreshCwIcon,
   SearchIcon,
@@ -9,6 +11,7 @@ import {
 import { useState } from "react";
 import {
   Link,
+  useNavigate,
   useNavigation,
   useRevalidator,
   useSearchParams,
@@ -17,7 +20,16 @@ import { RecipeCard } from "~/components/recipe-card";
 import { RecipeFilters } from "~/components/recipe-filters";
 import { RecipeTable } from "~/components/recipe-table";
 import { Button } from "~/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import {
   Pagination,
   PaginationContent,
@@ -28,16 +40,25 @@ import {
 } from "~/components/ui/pagination";
 import { Skeleton } from "~/components/ui/skeleton";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
-import { getRecipeFilters, getRecipesPaginated } from "~/lib/api/resources";
+import {
+  getRecipeFilters,
+  getRecipesPaginated,
+  importRecipeFromUrl,
+} from "~/lib/api/resources";
 import type { Route } from "./+types/recipes";
 
 export const handle = {
   topbar: function RecipesTopbar() {
     const [searchParams, setSearchParams] = useSearchParams();
     const revalidator = useRevalidator();
+    const navigate = useNavigate();
     const [searchValue, setSearchValue] = useState(
       searchParams.get("search") ?? "",
     );
+    const [importOpen, setImportOpen] = useState(false);
+    const [importUrl, setImportUrl] = useState("");
+    const [importError, setImportError] = useState<string | null>(null);
+    const [isImporting, setIsImporting] = useState(false);
 
     const handleSearch = (query: string) => {
       setSearchValue(query);
@@ -51,9 +72,40 @@ export const handle = {
       setSearchParams(next, { preventScrollReset: true, replace: true });
     };
 
+    const handleImport = async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      let url: URL;
+
+      try {
+        url = new URL(importUrl);
+      } catch {
+        setImportError("Enter a valid recipe URL.");
+        return;
+      }
+
+      if (url.protocol !== "http:" && url.protocol !== "https:") {
+        setImportError("Enter an HTTP or HTTPS recipe URL.");
+        return;
+      }
+
+      setIsImporting(true);
+      setImportError(null);
+      const result = await importRecipeFromUrl(url.toString());
+      setIsImporting(false);
+
+      if (result.error || !result.data) {
+        setImportError(result.error ?? "Unable to import the recipe.");
+        return;
+      }
+
+      setImportOpen(false);
+      setImportUrl("");
+      navigate(`/recipes/${result.data.id}`);
+    };
+
     return (
       <>
-        <div className="relative flex-1 max-w-md">
+        <div className="relative min-w-0 flex-1 max-w-md">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search recipes..."
@@ -71,17 +123,91 @@ export const handle = {
           <RefreshCwIcon
             className={`size-4 ${revalidator.state === "loading" ? "animate-spin" : ""}`}
           />
+          <span className="sr-only">Refresh recipes</span>
+        </Button>
+        <Button variant="outline" onClick={() => setImportOpen(true)}>
+          <Link2Icon data-icon="inline-start" />
+          <span className="hidden sm:inline">Import from URL</span>
+          <span className="sr-only sm:hidden">Import from URL</span>
         </Button>
         <Button>
           <PlusIcon data-icon="inline-start" />
-          New recipe
+          <span className="hidden sm:inline">New recipe</span>
+          <span className="sr-only sm:hidden">New recipe</span>
         </Button>
         <Button variant="outline" asChild>
           <Link to="/settings">
             <UploadIcon data-icon="inline-start" />
-            Import recipes
+            <span className="hidden md:inline">Import recipes</span>
+            <span className="sr-only md:hidden">Import recipes</span>
           </Link>
         </Button>
+
+        <Dialog
+          open={importOpen}
+          onOpenChange={(open) => !isImporting && setImportOpen(open)}
+        >
+          <DialogContent showCloseButton={!isImporting}>
+            <form onSubmit={handleImport}>
+              <DialogHeader>
+                <DialogTitle>Import recipe from URL</DialogTitle>
+                <DialogDescription>
+                  Kombu will use AI to extract a recipe from the page.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="py-4">
+                <Label htmlFor="recipe-import-url">Recipe URL</Label>
+                <Input
+                  id="recipe-import-url"
+                  type="url"
+                  inputMode="url"
+                  placeholder="https://example.com/recipe"
+                  value={importUrl}
+                  onChange={(event) => {
+                    setImportUrl(event.target.value);
+                    setImportError(null);
+                  }}
+                  disabled={isImporting}
+                  aria-invalid={Boolean(importError)}
+                  aria-describedby={
+                    importError ? "recipe-import-error" : undefined
+                  }
+                  className="mt-2"
+                  autoFocus
+                  required
+                />
+                {importError && (
+                  <p
+                    id="recipe-import-error"
+                    className="mt-2 text-sm text-destructive"
+                    role="alert"
+                  >
+                    {importError}
+                  </p>
+                )}
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setImportOpen(false)}
+                  disabled={isImporting}
+                >
+                  Cancel
+                </Button>
+                <Button type="submit" disabled={isImporting}>
+                  {isImporting && (
+                    <Loader2Icon
+                      data-icon="inline-start"
+                      className="animate-spin"
+                    />
+                  )}
+                  Import recipe
+                </Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
       </>
     );
   },
@@ -228,9 +354,12 @@ export default function Recipes({ loaderData }: Route.ComponentProps) {
               </p>
               <p className="text-muted-foreground text-sm mt-1 max-w-md">
                 Your cookbook is empty. Capture your first recipe or{" "}
-                <a href="/imports" className="underline hover:text-foreground">
+                <Link
+                  to="/settings"
+                  className="underline hover:text-foreground"
+                >
                   import a recipe dataset
-                </a>{" "}
+                </Link>{" "}
                 to get started.
               </p>
             </div>
