@@ -39,6 +39,7 @@ import {
 } from "~/components/ui/table";
 import {
   createImportJob,
+  getAiCapabilities,
   getCurrentUser,
   getImportJobs,
   getImportSources,
@@ -52,19 +53,22 @@ export function meta() {
 }
 
 export async function loader() {
-  const [overview, user, readiness, sources, jobs] = await Promise.all([
-    getSystemOverview(),
-    getCurrentUser(),
-    getReadiness(),
-    getImportSources(),
-    getImportJobs(),
-  ]);
+  const [overview, user, readiness, sources, jobs, aiCapabilities] =
+    await Promise.all([
+      getSystemOverview(),
+      getCurrentUser(),
+      getReadiness(),
+      getImportSources(),
+      getImportJobs(),
+      getAiCapabilities(),
+    ]);
 
-  return { overview, user, readiness, sources, jobs };
+  return { overview, user, readiness, sources, jobs, aiCapabilities };
 }
 
 export default function Settings({ loaderData }: Route.ComponentProps) {
-  const { overview, user, readiness, sources, jobs } = loaderData;
+  const { overview, user, readiness, sources, jobs, aiCapabilities } =
+    loaderData;
 
   return (
     <div className="flex flex-col gap-6">
@@ -165,6 +169,35 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               </Field>
             ))}
           </FieldGroup>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>AI Capabilities</CardTitle>
+          <CardDescription>
+            Provider-neutral AI features are gated by the{" "}
+            <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
+              KOMBU_AI_FEATURES_ENABLED
+            </code>{" "}
+            setting. Enable it to activate recipe planning, inventory insights,
+            and import assistance.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="flex flex-col gap-3">
+          {aiCapabilities.data.map((capability) => (
+            <div key={capability.key} className="rounded-md border p-4">
+              <div className="flex items-center justify-between gap-3">
+                <span className="font-medium">{capability.label}</span>
+                <StatusBadge
+                  value={capability.enabled ? "enabled" : "planned"}
+                />
+              </div>
+              <p className="mt-2 text-muted-foreground text-sm">
+                {capability.description}
+              </p>
+            </div>
+          ))}
         </CardContent>
       </Card>
 

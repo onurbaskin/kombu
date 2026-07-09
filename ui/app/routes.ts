@@ -7,7 +7,5 @@ export default [
   route("inventory", "routes/inventory.tsx"),
   route("shopping", "routes/shopping.tsx"),
   route("scanner", "routes/scanner.tsx"),
-  route("imports", "routes/imports.tsx"),
-  route("ai", "routes/ai.tsx"),
   route("settings", "routes/settings.tsx"),
 ] satisfies RouteConfig;

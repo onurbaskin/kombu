@@ -1,11 +1,8 @@
 import {
-  BotIcon,
   BoxesIcon,
   HomeIcon,
-  ImportIcon,
   ListChecksIcon,
   ScanLineIcon,
-  SearchIcon,
   SettingsIcon,
   SoupIcon,
 } from "lucide-react";
@@ -17,9 +14,9 @@ import {
   Outlet,
   Scripts,
   ScrollRestoration,
+  useMatches,
 } from "react-router";
 
-import { Button } from "~/components/ui/button";
 import { Separator } from "~/components/ui/separator";
 import { TooltipProvider } from "~/components/ui/tooltip";
 import { cn } from "~/lib/utils";
@@ -32,8 +29,6 @@ const navigation = [
   { label: "Inventory", href: "/inventory", icon: BoxesIcon },
   { label: "Shopping", href: "/shopping", icon: ListChecksIcon },
   { label: "Scanner", href: "/scanner", icon: ScanLineIcon },
-  { label: "Imports", href: "/imports", icon: ImportIcon },
-  { label: "AI Lab", href: "/ai", icon: BotIcon },
   { label: "Settings", href: "/settings", icon: SettingsIcon },
 ];
 
@@ -56,7 +51,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
   );
 }
 
+interface RouteHandle {
+  topbar?: React.ComponentType;
+}
+
 export default function App() {
+  const matches = useMatches();
+  const topbarMatch = [...matches]
+    .reverse()
+    .find((m) => (m.handle as RouteHandle).topbar);
+  const Topbar = (topbarMatch?.handle as RouteHandle)?.topbar;
+
   return (
     <div className="min-h-screen bg-background">
       <div className="grid min-h-screen lg:grid-cols-[17rem_1fr]">
@@ -93,17 +98,13 @@ export default function App() {
           </nav>
         </aside>
         <div className="flex min-w-0 flex-col">
-          <header className="sticky top-0 flex h-16 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/75 lg:px-8">
+          <header className="sticky top-0 z-10 flex h-16 items-center gap-3 border-b bg-background/95 px-4 backdrop-blur supports-[backdrop-filter]:bg-background/75 lg:px-8">
             <div className="flex items-center gap-2 lg:hidden">
               <SoupIcon aria-hidden="true" />
               <span className="font-semibold">Kombu</span>
             </div>
             <div className="ml-auto flex items-center gap-2">
-              <Button variant="outline" size="sm">
-                <SearchIcon data-icon="inline-start" />
-                Search
-              </Button>
-              <Button size="sm">Add recipe</Button>
+              {Topbar ? <Topbar /> : null}
             </div>
           </header>
           <main className="min-w-0 flex-1 px-4 py-6 lg:px-8">
