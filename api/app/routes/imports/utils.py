@@ -1,3 +1,4 @@
+from api.app.config import get_settings
 from api.app.models import ImportJob
 from api.app.routes.imports.schemas import ImportJobCreate, ImportSourceRead
 from sqlalchemy import select
@@ -6,6 +7,8 @@ from sqlalchemy.orm import Session
 
 def list_import_sources() -> list[ImportSourceRead]:
     """List import sources that Kombu can expose to users."""
+    settings = get_settings()
+    kaggle_ready = bool(settings.kaggle_username and settings.kaggle_key)
     return [
         ImportSourceRead(
             key="kaggle-recipes",
@@ -14,7 +17,7 @@ def list_import_sources() -> list[ImportSourceRead]:
             description=(
                 "User-provided Kaggle exports prepared as repeatable import jobs."
             ),
-            ready_for_import=False,
+            ready_for_import=kaggle_ready,
         ),
         ImportSourceRead(
             key="open-recipe-json",

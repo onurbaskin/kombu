@@ -35,6 +35,11 @@ def create_job(
     payload: ImportJobCreate,
     session: SessionDep,
 ) -> ImportJobRead:
-    """Create an import job."""
+    """Create an import job and optionally execute it."""
     job = create_import_job(session, payload)
+    if payload.source_type == "dataset":
+        from api.app.services.recipe_importer import import_kaggle_dataset
+
+        import_kaggle_dataset(session, job.id)
+        session.refresh(job)
     return ImportJobRead.model_validate(job)
