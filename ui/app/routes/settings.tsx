@@ -136,6 +136,8 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   const [formBaseUrl, setFormBaseUrl] = useState("");
   const [formDefaultModel, setFormDefaultModel] = useState("");
   const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
+  const [isCreatingImport, setIsCreatingImport] = useState(false);
+  const [importError, setImportError] = useState<string | null>(null);
 
   function openAddDialog() {
     setEditingProvider(null);
@@ -206,6 +208,24 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
   async function handleDelete(id: number) {
     await deleteAiProvider(id);
     setDeleteConfirmId(null);
+    revalidator.revalidate();
+  }
+
+  async function handleCreateImport(source: (typeof sources.data)[number]) {
+    setIsCreatingImport(true);
+    setImportError(null);
+
+    const result = await createImportJob({
+      source_name: source.label,
+      source_type: source.source_type,
+    });
+
+    setIsCreatingImport(false);
+    if (result.source === "fallback") {
+      setImportError(result.error ?? "Unable to start the import.");
+      return;
+    }
+
     revalidator.revalidate();
   }
 
@@ -535,20 +555,18 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={async () => {
-                            try {
-                              await createImportJob({
-                                source_name: source.label,
-                                source_type: source.source_type,
-                              });
-                              window.location.reload();
-                            } catch {
-                              // Silently fail — user can try again
-                            }
-                          }}
+                          disabled={isCreatingImport}
+                          onClick={() => void handleCreateImport(source)}
                         >
-                          <DownloadIcon data-icon="inline-start" />
-                          Download
+                          {isCreatingImport ? (
+                            <Loader2Icon
+                              className="animate-spin"
+                              data-icon="inline-start"
+                            />
+                          ) : (
+                            <DownloadIcon data-icon="inline-start" />
+                          )}
+                          {isCreatingImport ? "Starting…" : "Download"}
                         </Button>
                       ) : (
                         <Button variant="outline" size="sm" disabled>
@@ -562,6 +580,12 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               })}
             </TableBody>
           </Table>
+
+          {importError && (
+            <p className="mt-3 text-destructive text-sm" role="alert">
+              {importError}
+            </p>
+          )}
 
           {jobs.data.length > 0 && (
             <>
