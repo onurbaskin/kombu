@@ -7,6 +7,7 @@ import {
   UsersIcon,
   WandSparklesIcon,
 } from "lucide-react";
+import { useState } from "react";
 import { Link, useNavigation } from "react-router";
 import { SourceNotice } from "~/components/source-notice";
 import { Badge } from "~/components/ui/badge";
@@ -14,7 +15,7 @@ import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Separator } from "~/components/ui/separator";
 import { Skeleton } from "~/components/ui/skeleton";
-import { getRecipe } from "~/lib/api/resources";
+import { createShoppingItem, getRecipe } from "~/lib/api/resources";
 import type { Route } from "./+types/recipe-detail";
 
 export function meta({ data }: Route.MetaArgs) {
@@ -41,6 +42,8 @@ export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
   const recipe = recipeResult.data;
   const navigation = useNavigation();
   const isLoading = navigation.state === "loading";
+  const [isAddingToShopping, setIsAddingToShopping] = useState(false);
+  const [shoppingMessage, setShoppingMessage] = useState<string | null>(null);
 
   const imageUrl = recipe.image_url
     ? recipe.image_url.startsWith("http://") ||
@@ -96,6 +99,28 @@ export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
           </p>
         </div>
       </div>
+    );
+  }
+
+  async function addIngredientsToShopping() {
+    setIsAddingToShopping(true);
+    setShoppingMessage(null);
+    const results = await Promise.all(
+      recipe.ingredients.map((ingredient) =>
+        createShoppingItem({
+          name: ingredient.name,
+          quantity: ingredient.quantity ?? 1,
+          unit: ingredient.unit,
+          category: "Recipe ingredients",
+        }),
+      ),
+    );
+    setIsAddingToShopping(false);
+    const failed = results.filter((result) => result.error).length;
+    setShoppingMessage(
+      failed
+        ? `Added ${results.length - failed} items; ${failed} could not be added.`
+        : `${results.length} ingredients added to the shopping list.`,
     );
   }
 
@@ -253,10 +278,22 @@ export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
           <WandSparklesIcon data-icon="inline-start" />
           Suggest from inventory
         </Button>
-        <Button variant="outline" disabled>
+        <Button
+          variant="outline"
+          disabled={isAddingToShopping || recipe.ingredients.length === 0}
+          onClick={() => void addIngredientsToShopping()}
+        >
           <ShoppingCartIcon data-icon="inline-start" />
-          Add to shopping list
+          {isAddingToShopping ? "Adding…" : "Add to shopping list"}
         </Button>
+        {shoppingMessage && (
+          <p
+            className="self-center text-muted-foreground text-sm"
+            role="status"
+          >
+            {shoppingMessage}
+          </p>
+        )}
       </div>
     </div>
   );
