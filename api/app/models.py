@@ -285,3 +285,26 @@ class AiSuggestion(Base):
         DateTime(timezone=True),
         server_default=func.now(),
     )
+
+
+class AiProviderConfig(Base):
+    """User-managed AI provider configuration."""
+
+    __tablename__ = "ai_provider_configs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    provider: Mapped[str] = mapped_column(String(80), index=True)
+    label: Mapped[str] = mapped_column(String(160))
+    api_key: Mapped[str] = mapped_column(String(512))
+    base_url: Mapped[str | None] = mapped_column(String(1024), nullable=True)
+    default_model: Mapped[str] = mapped_column(String(160))
+    is_enabled: Mapped[bool] = mapped_column(default=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+        onupdate=func.now(),
+    )

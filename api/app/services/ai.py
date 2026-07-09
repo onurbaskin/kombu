@@ -1,18 +1,30 @@
 # ruff: noqa: E501
-"""AI provider service using OpenRouter as the first provider."""
+"""AI provider service using LiteLLM for multi-provider support."""
 
-import hashlib
 import json
 import logging
-from collections.abc import Sequence
-from functools import lru_cache
 
-from openai import OpenAI
+from litellm import completion as litellm_completion
+from litellm.exceptions import APIError as LiteLLMAPIError
 from pydantic import BaseModel, Field
+from sqlalchemy import select
+from sqlalchemy.orm import Session
 
-from api.app.config import get_settings
+from api.app.database import SessionLocal
+from api.app.models import AiProviderConfig
 
 logger = logging.getLogger(__name__)
+
+KNOWN_PROVIDERS = [
+    {"key": "openai", "label": "OpenAI", "docs": "https://platform.openai.com/api-keys"},
+    {"key": "anthropic", "label": "Anthropic", "docs": "https://console.anthropic.com/"},
+    {"key": "openrouter", "label": "OpenRouter", "docs": "https://openrouter.ai/keys"},
+    {"key": "groq", "label": "Groq", "docs": "https://console.groq.com/keys"},
+    {"key": "google", "label": "Google AI", "docs": "https://aistudio.google.com/apikey"},
+    {"key": "deepseek", "label": "DeepSeek", "docs": "https://platform.deepseek.com/"},
+    {"key": "together_ai", "label": "Together AI", "docs": "https://api.together.xyz/"},
+    {"key": "mistral", "label": "Mistral AI", "docs": "https://console.mistral.ai/"},
+]
 
 
 class IngredientMatch(BaseModel):
@@ -40,58 +52,61 @@ class EnhancedRecipe(BaseModel):
     tips: list[str] = Field(default_factory=list)
 
 
-def _build_client() -> OpenAI | None:
-    """Build an OpenAI-compatible client pointed at OpenRouter."""
-    settings = get_settings()
-    if not settings.openrouter_api_key:
-        logger.warning("OpenRouter API key not configured, AI features disabled")
-        return None
-    return OpenAI(
-        base_url=settings.openrouter_base_url,
-        api_key=settings.openrouter_api_key,
+def _get_active_provider(session: Session) -> AiProviderConfig | None:
+    """Return the first enabled AI provider config."""
+    stmt = (
+        select(AiProviderConfig)
+        .where(AiProviderConfig.is_enabled.is_(True))
+        .order_by(AiProviderConfig.created_at.asc())
+        .limit(1)
     )
+    return session.scalars(stmt).first()
 
 
-def _cache_key(prompt: str, model: str) -> str:
-    """Generate a deterministic cache key for a prompt."""
-    return hashlib.sha256(f"{model}:{prompt}".encode()).hexdigest()
+def _get_client_kwargs(config: AiProviderConfig) -> dict:
+    """Build kwargs for litellm.completion from a provider config."""
+    kwargs: dict = {
+        "model": f"{config.provider}/{config.default_model}",
+        "api_key": config.api_key,
+    }
+    if config.base_url:
+        kwargs["api_base"] = config.base_url
+    return kwargs
 
 
-async def _chat_completion(
-    messages: Sequence[dict[str, str]],
+def has_available_provider() -> bool:
+    """Check if any enabled AI provider is configured."""
+    with SessionLocal() as session:
+        return _get_active_provider(session) is not None
+
+
+async def _call_llm(
+    messages: list[dict[str, str]],
     *,
     response_format: type[BaseModel] | None = None,
     temperature: float = 0.7,
     max_tokens: int = 2048,
 ) -> str:
-    """Send a chat completion request to OpenRouter."""
-    client = _build_client()
-    if client is None:
-        raise ValueError("OpenRouter API key not configured")
+    """Call LiteLLM with the first enabled provider."""
+    with SessionLocal() as session:
+        config = _get_active_provider(session)
+        if config is None:
+            raise ValueError("No AI provider configured")
 
-    settings = get_settings()
+        kwargs = _get_client_kwargs(config)
+        kwargs["messages"] = messages  # type: ignore[assignment]
+        kwargs["temperature"] = temperature
+        kwargs["max_tokens"] = max_tokens
 
-    kwargs: dict = {
-        "model": settings.openrouter_model,
-        "messages": messages,  # type: ignore[arg-type]
-        "temperature": temperature,
-        "max_tokens": max_tokens,
-    }
+        if response_format is not None:
+            kwargs["response_format"] = response_format
 
-    if response_format is not None:
-        schema = response_format.model_json_schema()
-        json_schema = {
-            "name": response_format.__name__,
-            "strict": True,
-            "schema": schema,
-        }
-        kwargs["response_format"] = {
-            "type": "json_schema",
-            "json_schema": json_schema,
-        }
-
-    response = client.chat.completions.create(**kwargs)  # type: ignore[arg-type]
-    return response.choices[0].message.content or ""
+        try:
+            response = litellm_completion(**kwargs)  # type: ignore[arg-type]
+            return response.choices[0].message.content or ""
+        except LiteLLMAPIError as e:
+            logger.error("LiteLLM API error: %s", e)
+            raise ValueError(str(e)) from e
 
 
 async def suggest_inventory_alternatives(
@@ -100,10 +115,7 @@ async def suggest_inventory_alternatives(
     inventory_items: list[dict[str, str]],
     expiry_items: list[dict[str, str]],
 ) -> dict:
-    """Suggest ingredient substitutions based on what's in inventory.
-
-    Returns a dict with ingredient matches and alternatives.
-    """
+    """Suggest ingredient substitutions based on inventory."""
     prompt = f"""You are a helpful kitchen assistant. Given a recipe and the user's current inventory,
 suggest which recipe ingredients are available and provide substitutions for missing ones.
 
@@ -116,16 +128,14 @@ For each recipe ingredient, indicate if it's available and suggest substitutions
 Prioritize items that are expiring soon."""
 
     try:
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a kitchen assistant. Respond with valid JSON matching the IngredientMatch schema for each ingredient.",
-            },
-            {"role": "user", "content": prompt},
-        ]
-        result = await _chat_completion(
-            messages,
-            response_format=IngredientMatch,
+        result = await _call_llm(
+            [
+                {
+                    "role": "system",
+                    "content": "You are a kitchen assistant. Respond with a JSON array where each item has: name (string), available (boolean), substitutions (array of strings).",
+                },
+                {"role": "user", "content": prompt},
+            ],
             temperature=0.3,
         )
         return json.loads(result)
@@ -140,31 +150,29 @@ async def suggest_shopping_items(
     planned_recipes: list[dict[str, str]],
     frequently_cooked: list[str],
 ) -> dict:
-    """Suggest what to add to the shopping list based on history and context.
-
-    Returns a dict with shopping suggestions.
-    """
-    prompt = f"""You are a helpful kitchen assistant. Based on the user's history and current situation,
-suggest items they might need to add to their shopping list.
+    """Suggest what to add to the shopping list."""
+    prompt = f"""Based on the user's history and current situation, suggest items they might need.
 
 Previous shopping patterns: {json.dumps(previous_shopping)}
-Current inventory status: {json.dumps(inventory_status)}
+Current inventory: {json.dumps(inventory_status)}
 Planned recipes: {json.dumps(planned_recipes)}
 Most frequently cooked: {json.dumps(frequently_cooked)}
 
-Suggest items that make sense (not single-use small quantities like "1/2 tsp salt").
-Focus on staples, fresh produce, and items that are likely running low.
-Also consider what's expiring and what recipes need."""
+Suggest items that make sense (not single-use small quantities).
+Focus on staples, fresh produce, and items likely running low.
+Respond with: {{"suggestions": [{{"item_name": "...", "reason": "...", "priority": "high|medium|low"}}]}}"""
 
     try:
-        messages = [
-            {
-                "role": "system",
-                "content": 'You are a kitchen assistant. Respond with valid JSON: {"suggestions": [{"item_name": "...", "reason": "...", "priority": "high|medium|low"}]}',
-            },
-            {"role": "user", "content": prompt},
-        ]
-        result = await _chat_completion(messages, temperature=0.5)
+        result = await _call_llm(
+            [
+                {
+                    "role": "system",
+                    "content": "You are a kitchen assistant. Respond with valid JSON.",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.5,
+        )
         return json.loads(result)
     except Exception as e:
         logger.exception("Failed to get shopping suggestions")
@@ -177,33 +185,25 @@ async def enhance_recipe(
     recipe_instructions: str | None,
     recipe_ingredients: list[str],
 ) -> EnhancedRecipe | dict:
-    """Enhance a recipe with better formatting, tips, and structure."""
-    prompt = f"""You are a professional chef and recipe writer. Take this recipe and make it beautiful,
-well-structured, and helpful.
+    """Enhance a recipe with better formatting."""
+    prompt = f"""Take this recipe and make it beautiful and well-structured.
 
 Original title: {recipe_title}
 Original summary: {recipe_summary or "N/A"}
 Original instructions: {recipe_instructions or "N/A"}
 Ingredients: {json.dumps(recipe_ingredients)}
 
-Rewrite the recipe with:
-1. A polished, appetizing title
-2. A warm, inviting summary (2-3 sentences)
-3. Well-formatted, clear step-by-step instructions with timing hints
-4. 2-3 helpful cooking tips or variations
-
-Format as valid JSON matching the EnhancedRecipe schema."""
+Return JSON with: title (polished), summary (2-3 warm sentences), instructions (clear steps with timing), tips (2-3 cooking tips)."""
 
     try:
-        messages = [
-            {
-                "role": "system",
-                "content": "You are a professional chef. Respond with valid JSON matching the EnhancedRecipe schema.",
-            },
-            {"role": "user", "content": prompt},
-        ]
-        result = await _chat_completion(
-            messages,
+        result = await _call_llm(
+            [
+                {
+                    "role": "system",
+                    "content": "You are a professional chef. Respond with valid JSON matching the EnhancedRecipe schema.",
+                },
+                {"role": "user", "content": prompt},
+            ],
             response_format=EnhancedRecipe,
             temperature=0.7,
             max_tokens=4096,
@@ -218,18 +218,8 @@ Format as valid JSON matching the EnhancedRecipe schema."""
 async def analyze_inventory_photos(
     _image_paths: list[str],
 ) -> dict:
-    """Analyze photos to identify food items for inventory.
-
-    Note: OpenRouter's text models don't support vision directly.
-    This would need a vision-capable model via OpenRouter.
-    """
+    """Analyze photos to identify food items."""
     return {
         "error": "Photo analysis requires a vision-capable model. "
-        "Configure OPENROUTER_MODEL to a supported vision model."
+        "Configure a provider with a vision model."
     }
-
-
-@lru_cache(maxsize=128)
-def _cached_completion(prompt_hash: str, model: str) -> str | None:
-    """In-memory cache placeholder. Production would use a DB cache."""
-    return None

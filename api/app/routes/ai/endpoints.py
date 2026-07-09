@@ -5,13 +5,18 @@ from api.app.config import Settings, get_settings
 from api.app.database import get_session
 from api.app.routes.ai.schemas import (
     AiCapabilityRead,
+    AiProviderConfigCreate,
+    AiProviderConfigRead,
+    AiProviderConfigUpdate,
     AiSuggestionCreate,
     AiSuggestionRead,
+    KnownProviderRead,
 )
 from api.app.routes.ai.utils import create_ai_suggestion, list_ai_capabilities
 from api.app.services.ai import EnhancedRecipe
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 logger = logging.getLogger(__name__)
@@ -174,3 +179,83 @@ async def analyze_photos(
     from api.app.services.ai import analyze_inventory_photos
 
     return await analyze_inventory_photos(payload.image_paths)
+
+
+@router.get("/providers/known", response_model=list[KnownProviderRead])
+def known_providers() -> list[dict]:
+    """Return the list of known AI provider types that users can configure."""
+    from api.app.services.ai import KNOWN_PROVIDERS
+
+    return KNOWN_PROVIDERS
+
+
+@router.get("/providers", response_model=list[AiProviderConfigRead])
+def list_providers(session: SessionDep) -> list[AiProviderConfigRead]:
+    """List all configured AI providers."""
+    from api.app.models import AiProviderConfig
+
+    stmt = select(AiProviderConfig).order_by(AiProviderConfig.created_at.desc())
+    return [
+        AiProviderConfigRead.model_validate(c)
+        for c in session.scalars(stmt).all()
+    ]
+
+
+@router.post(
+    "/providers",
+    response_model=AiProviderConfigRead,
+    status_code=status.HTTP_201_CREATED,
+)
+def create_provider(
+    payload: AiProviderConfigCreate,
+    session: SessionDep,
+) -> AiProviderConfigRead:
+    """Add a new AI provider configuration."""
+    from api.app.models import AiProviderConfig
+
+    config = AiProviderConfig(**payload.model_dump())
+    session.add(config)
+    session.commit()
+    session.refresh(config)
+    return AiProviderConfigRead.model_validate(config)
+
+
+@router.patch("/providers/{provider_id}", response_model=AiProviderConfigRead)
+def update_provider(
+    provider_id: int,
+    payload: AiProviderConfigUpdate,
+    session: SessionDep,
+) -> AiProviderConfigRead:
+    """Update an AI provider configuration."""
+    from api.app.models import AiProviderConfig
+
+    config = session.get(AiProviderConfig, provider_id)
+    if config is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Provider not found.",
+        )
+    update_data = payload.model_dump(exclude_unset=True)
+    for key, value in update_data.items():
+        setattr(config, key, value)
+    session.commit()
+    session.refresh(config)
+    return AiProviderConfigRead.model_validate(config)
+
+
+@router.delete("/providers/{provider_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_provider(
+    provider_id: int,
+    session: SessionDep,
+) -> None:
+    """Delete an AI provider configuration."""
+    from api.app.models import AiProviderConfig
+
+    config = session.get(AiProviderConfig, provider_id)
+    if config is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Provider not found.",
+        )
+    session.delete(config)
+    session.commit()

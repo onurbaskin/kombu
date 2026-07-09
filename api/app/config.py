@@ -21,9 +21,6 @@ class Settings(BaseSettings):
     recipe_import_dir: str = "var/imports"
     kaggle_username: str = Field(default="", alias="KAGGLE_USERNAME")
     kaggle_key: str = Field(default="", alias="KAGGLE_KEY")
-    openrouter_api_key: str = ""
-    openrouter_model: str = "openai/gpt-4o-mini"
-    openrouter_base_url: str = "https://openrouter.ai/api/v1"
 
     model_config = SettingsConfigDict(
         env_file=".env",
