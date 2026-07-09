@@ -59,7 +59,7 @@ export default function App() {
   const matches = useMatches();
   const topbarMatch = [...matches]
     .reverse()
-    .find((m) => (m.handle as RouteHandle).topbar);
+    .find((m) => (m.handle as RouteHandle)?.topbar);
   const Topbar = (topbarMatch?.handle as RouteHandle)?.topbar;
 
   return (
