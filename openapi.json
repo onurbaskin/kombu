@@ -87,9 +87,20 @@
       "AiProviderConfigRead": {
         "description": "AI provider configuration response.",
         "properties": {
-          "api_key": {
-            "title": "Api Key",
-            "type": "string"
+          "api_key_configured": {
+            "title": "Api Key Configured",
+            "type": "boolean"
+          },
+          "api_key_hint": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Api Key Hint"
           },
           "base_url": {
             "anyOf": [
@@ -137,7 +148,7 @@
           "id",
           "provider",
           "label",
-          "api_key",
+          "api_key_configured",
           "base_url",
           "default_model",
           "is_enabled",
@@ -1126,6 +1137,21 @@
           "source_types"
         ],
         "title": "RecipeFilterValues",
+        "type": "object"
+      },
+      "RecipeImportUrlRequest": {
+        "properties": {
+          "url": {
+            "maxLength": 2048,
+            "minLength": 5,
+            "title": "Url",
+            "type": "string"
+          }
+        },
+        "required": [
+          "url"
+        ],
+        "title": "RecipeImportUrlRequest",
         "type": "object"
       },
       "RecipeIngredientCreate": {
@@ -2786,6 +2812,48 @@
           }
         },
         "summary": "Filter Values",
+        "tags": [
+          "recipes"
+        ]
+      }
+    },
+    "/api/v1/recipes/import-url": {
+      "post": {
+        "description": "Fetch a public recipe URL, extract it through AI, and create a recipe.",
+        "operationId": "import_from_url_api_v1_recipes_import_url_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeImportUrlRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import From Url",
         "tags": [
           "recipes"
         ]
