@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import Field, field_validator
+from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -13,12 +13,8 @@ class Settings(BaseSettings):
     api_prefix: str = "/api/v1"
     public_web_url: str = "http://localhost:5173"
     database_url: str = "sqlite:///./var/kombu.db"
-    cors_origins: list[str] = Field(
-        default_factory=lambda: [
-            "http://localhost:5173",
-            "http://localhost:3000",
-            "http://127.0.0.1:5173",
-        ],
+    cors_origins: str = (
+        "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
     )
     ai_features_enabled: bool = False
     scanner_upload_dir: str = "var/scans"
@@ -33,13 +29,15 @@ class Settings(BaseSettings):
         extra="ignore",
     )
 
-    @field_validator("cors_origins", mode="before")
-    @classmethod
-    def split_cors_origins(cls, value: object) -> object:
-        """Allow CORS origins to be configured as a comma-separated string."""
-        if isinstance(value, str):
-            return [origin.strip() for origin in value.split(",") if origin.strip()]
-        return value
+    @computed_field
+    @property
+    def cors_origin_list(self) -> list[str]:
+        """Parsed CORS origins list."""
+        return [
+            origin.strip()
+            for origin in self.cors_origins.split(",")
+            if origin.strip()
+        ]
 
 
 @lru_cache
