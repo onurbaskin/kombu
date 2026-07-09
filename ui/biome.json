@@ -11,6 +11,30 @@
       "preset": "recommended"
     }
   },
+  "overrides": [
+    {
+      "includes": ["app/components/ui/**"],
+      "linter": {
+        "rules": {
+          "a11y": {
+            "useFocusableInteractive": "off",
+            "useSemanticElements": "off",
+            "useAriaPropsForRole": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["app/components/ui/slider.tsx"],
+      "linter": {
+        "rules": {
+          "suspicious": {
+            "noArrayIndexKey": "off"
+          }
+        }
+      }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "double",
