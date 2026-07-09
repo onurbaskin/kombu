@@ -26,6 +26,7 @@ class RecipeCreate(BaseModel):
 
     title: str = Field(min_length=1, max_length=240)
     summary: str | None = None
+    instructions: str | None = None
     source_url: str | None = Field(default=None, max_length=1024)
     source_type: RecipeSourceType = RecipeSourceType.USER
     cuisine: str | None = Field(default=None, max_length=120)
@@ -42,6 +43,7 @@ class RecipeRead(BaseModel):
     id: int
     title: str
     summary: str | None
+    instructions: str | None
     source_url: str | None
     source_type: RecipeSourceType
     cuisine: str | None
@@ -52,4 +54,24 @@ class RecipeRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     ingredients: list[RecipeIngredientRead]
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RecipeListResponse(BaseModel):
+    """Paginated recipe list."""
+
+    items: list[RecipeRead]
+    total: int
+    page: int
+    per_page: int
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RecipeFilterValues(BaseModel):
+    """Available filter values for the recipe listing sidebar."""
+
+    cuisines: list[str]
+    source_types: list[str]
+    max_prep_minutes: int | None = None
+    max_cook_minutes: int | None = None
     model_config = ConfigDict(from_attributes=True)
