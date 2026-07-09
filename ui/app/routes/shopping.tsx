@@ -1,23 +1,11 @@
-import {
-  CheckIcon,
-  Loader2Icon,
-  PlusIcon,
-  WandSparklesIcon,
-} from "lucide-react";
-import { useEffect, useState } from "react";
-import { MetricCard } from "~/components/metric-card";
+import { PlusIcon } from "lucide-react";
+import { useMemo, useState } from "react";
+import { useRevalidator } from "react-router";
 import { PageHeader } from "~/components/page-header";
 import { SourceNotice } from "~/components/source-notice";
-import { StatusBadge } from "~/components/status-badge";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+import { Checkbox } from "~/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -26,261 +14,237 @@ import {
   DialogHeader,
   DialogTitle,
 } from "~/components/ui/dialog";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
+import { Field, FieldGroup, FieldLabel } from "~/components/ui/field";
+import { Input } from "~/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "~/components/ui/tabs";
 import {
-  getAiCapabilities,
-  getInventory,
-  getRecipes,
+  createShoppingItem,
   getShoppingItems,
-  type ShoppingSuggestion,
-  suggestShoppingItems,
+  updateShoppingItem,
 } from "~/lib/api/resources";
 import type { Route } from "./+types/shopping";
-
-export const handle = {
-  topbar: function ShoppingTopbar() {
-    const [open, setOpen] = useState(false);
-    const [loading, setLoading] = useState(false);
-    const [suggestions, setSuggestions] = useState<ShoppingSuggestion[]>([]);
-    const [error, setError] = useState<string | null>(null);
-    const [aiEnabled, setAiEnabled] = useState(false);
-
-    useEffect(() => {
-      getAiCapabilities().then((result) => {
-        setAiEnabled(result.data.some((c) => c.enabled));
-      });
-    }, []);
-
-    const handleSmartSuggest = async () => {
-      setLoading(true);
-      setError(null);
-      setSuggestions([]);
-      setOpen(true);
-      try {
-        const [inventory, recipes, shopping] = await Promise.all([
-          getInventory(),
-          getRecipes(),
-          getShoppingItems(),
-        ]);
-
-        const result = await suggestShoppingItems({
-          shopping_history: shopping.data.map((item) => ({
-            name: item.name,
-          })),
-          inventory_items: inventory.data.map((item) => ({
-            name: item.name,
-            quantity: String(item.quantity),
-            location: item.location,
-          })),
-          planned_recipes: recipes.data.map((r) => ({ title: r.title })),
-          frequently_cooked: recipes.data.slice(0, 10).map((r) => r.title),
-        });
-
-        if (result.error) {
-          setError(result.error);
-        } else {
-          setSuggestions(result.data.suggestions);
-        }
-      } catch (e) {
-        setError(String(e));
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    const priorityVariant = (priority: string) => {
-      if (priority === "high") return "destructive" as const;
-      if (priority === "low") return "secondary" as const;
-      return "default" as const;
-    };
-
-    return (
-      <>
-        <Button
-          variant="outline"
-          onClick={handleSmartSuggest}
-          disabled={!aiEnabled || loading}
-        >
-          {loading ? (
-            <Loader2Icon data-icon="inline-start" className="animate-spin" />
-          ) : (
-            <WandSparklesIcon data-icon="inline-start" />
-          )}
-          Smart suggest
-        </Button>
-        <Button variant="outline">
-          <CheckIcon data-icon="inline-start" />
-          Mark trip complete
-        </Button>
-        <Button>
-          <PlusIcon data-icon="inline-start" />
-          Add item
-        </Button>
-
-        <Dialog open={open} onOpenChange={setOpen}>
-          <DialogContent className="sm:max-w-xl">
-            <DialogHeader>
-              <DialogTitle>Smart suggestions</DialogTitle>
-              <DialogDescription>
-                AI-powered shopping list suggestions based on your inventory,
-                recipes, and shopping patterns.
-              </DialogDescription>
-            </DialogHeader>
-            {loading ? (
-              <div className="flex items-center justify-center py-8">
-                <Loader2Icon className="size-8 animate-spin text-muted-foreground" />
-              </div>
-            ) : error ? (
-              <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm text-destructive">
-                {error}
-              </div>
-            ) : suggestions.length === 0 ? (
-              <div className="py-4 text-center text-sm text-muted-foreground">
-                No suggestions available. Try adding more items to your shopping
-                list or inventory.
-              </div>
-            ) : (
-              <div className="flex max-h-80 flex-col gap-3 overflow-y-auto">
-                {suggestions.map((s) => (
-                  <div
-                    key={s.item_name}
-                    className="flex items-start justify-between gap-4 rounded-md border p-3"
-                  >
-                    <div className="min-w-0">
-                      <p className="font-medium">{s.item_name}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {s.reason}
-                      </p>
-                    </div>
-                    <Badge
-                      variant={priorityVariant(s.priority)}
-                      className="shrink-0"
-                    >
-                      {s.priority}
-                    </Badge>
-                  </div>
-                ))}
-              </div>
-            )}
-            <DialogFooter showCloseButton />
-          </DialogContent>
-        </Dialog>
-      </>
-    );
-  },
-};
 
 export function meta() {
   return [{ title: "Shopping | Kombu" }];
 }
-
 export async function loader() {
-  const shopping = await getShoppingItems();
-  return { shopping };
+  return { shopping: await getShoppingItems() };
 }
+
+const listPeriods = ["Current", "Weekly", "Monthly"] as const;
 
 export default function Shopping({ loaderData }: Route.ComponentProps) {
   const { shopping } = loaderData;
-  const needed = shopping.data.filter((item) => item.status === "needed");
-  const purchased = shopping.data.filter((item) => item.status === "purchased");
+  const revalidator = useRevalidator();
+  const [period, setPeriod] = useState<(typeof listPeriods)[number]>("Current");
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [unit, setUnit] = useState("");
+  const [category, setCategory] = useState("Other");
+  const [error, setError] = useState<string | null>(null);
+
+  const groups = useMemo(() => {
+    const needed = shopping.data.filter((item) => item.status === "needed");
+    return needed.reduce((grouped, item) => {
+      const key = item.category?.trim() || "Other";
+      const items = grouped.get(key) ?? [];
+      items.push(item);
+      grouped.set(key, items);
+      return grouped;
+    }, new Map<string, typeof needed>());
+  }, [shopping.data]);
+
+  async function addItem(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const result = await createShoppingItem({
+      name,
+      quantity: Number(quantity) || 1,
+      unit: unit || null,
+      category: category || "Other",
+    });
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setOpen(false);
+    setName("");
+    setQuantity("1");
+    setUnit("");
+    setCategory("Other");
+    revalidator.revalidate();
+  }
+
+  async function toggleItem(id: number, checked: boolean) {
+    await updateShoppingItem(id, { status: checked ? "purchased" : "needed" });
+    revalidator.revalidate();
+  }
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        eyebrow="Shopping"
-        title="Turn missing ingredients and low stock into a shared list."
-        description="Shopping starts from recipes, inventory thresholds, scanner sessions, and direct user entry."
-      />
-
-      <SourceNotice results={[shopping]} />
-
-      <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard
-          label="Needed"
-          value={needed.length}
-          description="Items still waiting to be bought."
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <PageHeader
+          eyebrow="Shopping"
+          title="Your list"
+          description="Organised in the order you shop."
         />
-        <MetricCard
-          label="Purchased"
-          value={purchased.length}
-          description="Items marked complete during the current trip."
-        />
-        <MetricCard
-          label="Categories"
-          value={
-            new Set(shopping.data.map((item) => item.category ?? "Other")).size
-          }
-          description="Groups ready for a store-friendly layout."
-        />
+        <Button
+          size="sm"
+          onClick={() => {
+            setError(null);
+            setOpen(true);
+          }}
+        >
+          <PlusIcon data-icon="inline-start" />
+          Add item
+        </Button>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Shopping list</CardTitle>
-          <CardDescription>
-            One table for humans, agents, and future mobile or scanner flows.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Tabs defaultValue="needed">
-            <TabsList>
-              <TabsTrigger value="needed">Needed</TabsTrigger>
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="purchased">Purchased</TabsTrigger>
-            </TabsList>
-            <TabsContent value="needed" className="mt-4">
-              <ShoppingTable items={needed} />
-            </TabsContent>
-            <TabsContent value="all" className="mt-4">
-              <ShoppingTable items={shopping.data} />
-            </TabsContent>
-            <TabsContent value="purchased" className="mt-4">
-              <ShoppingTable items={purchased} />
-            </TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+      <SourceNotice results={[shopping]} />
+      <Tabs
+        value={period}
+        onValueChange={(value) => setPeriod(value as typeof period)}
+      >
+        <TabsList>
+          {listPeriods.map((value) => (
+            <TabsTrigger key={value} value={value}>
+              {value}
+            </TabsTrigger>
+          ))}
+        </TabsList>
+        {listPeriods.map((value) => (
+          <TabsContent key={value} value={value} className="mt-5">
+            <ListGroups
+              groups={value === "Current" ? groups : new Map()}
+              onToggle={toggleItem}
+              period={value}
+            />
+          </TabsContent>
+        ))}
+      </Tabs>
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <form onSubmit={addItem}>
+            <DialogHeader>
+              <DialogTitle>Add shopping item</DialogTitle>
+              <DialogDescription>
+                Choose a category so the list follows your route through the
+                shop.
+              </DialogDescription>
+            </DialogHeader>
+            <FieldGroup className="py-4">
+              <Field data-invalid={Boolean(error)}>
+                <FieldLabel htmlFor="shopping-name">Item</FieldLabel>
+                <Input
+                  id="shopping-name"
+                  value={name}
+                  onChange={(event) => {
+                    setName(event.target.value);
+                    setError(null);
+                  }}
+                  required
+                  autoFocus
+                  aria-invalid={Boolean(error)}
+                />
+                {error && <p className="text-destructive text-sm">{error}</p>}
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field>
+                  <FieldLabel htmlFor="shopping-quantity">Quantity</FieldLabel>
+                  <Input
+                    id="shopping-quantity"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={quantity}
+                    onChange={(event) => setQuantity(event.target.value)}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="shopping-unit">Unit</FieldLabel>
+                  <Input
+                    id="shopping-unit"
+                    placeholder="bag, kg"
+                    value={unit}
+                    onChange={(event) => setUnit(event.target.value)}
+                  />
+                </Field>
+              </div>
+              <Field>
+                <FieldLabel htmlFor="shopping-category">Category</FieldLabel>
+                <Input
+                  id="shopping-category"
+                  placeholder="Produce, proteins, household"
+                  value={category}
+                  onChange={(event) => setCategory(event.target.value)}
+                />
+              </Field>
+            </FieldGroup>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit">Add item</Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
 
-function ShoppingTable({
-  items,
+function ListGroups({
+  groups,
+  onToggle,
+  period,
 }: {
-  items: Route.ComponentProps["loaderData"]["shopping"]["data"];
+  groups: Map<string, Route.ComponentProps["loaderData"]["shopping"]["data"]>;
+  onToggle: (id: number, checked: boolean) => void;
+  period: string;
 }) {
+  if (groups.size === 0)
+    return (
+      <div className="rounded-lg border border-dashed p-8 text-center text-muted-foreground text-sm">
+        {period === "Current"
+          ? "Nothing to buy. Add the first item for this trip."
+          : `${period} lists are ready for planning—add items to the current list when you need them.`}
+      </div>
+    );
   return (
-    <Table>
-      <TableHeader>
-        <TableRow>
-          <TableHead>Item</TableHead>
-          <TableHead>Quantity</TableHead>
-          <TableHead>Category</TableHead>
-          <TableHead>Status</TableHead>
-        </TableRow>
-      </TableHeader>
-      <TableBody>
-        {items.map((item) => (
-          <TableRow key={item.id}>
-            <TableCell>{item.name}</TableCell>
-            <TableCell>
-              {item.quantity} {item.unit}
-            </TableCell>
-            <TableCell>{item.category ?? "Other"}</TableCell>
-            <TableCell>
-              <StatusBadge value={item.status} />
-            </TableCell>
-          </TableRow>
+    <div className="flex flex-col gap-5">
+      {[...groups.entries()]
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([category, items]) => (
+          <section key={category}>
+            <div className="mb-2 flex items-center gap-2">
+              <h2 className="font-medium text-sm">{category}</h2>
+              <Badge variant="secondary">{items.length}</Badge>
+            </div>
+            <div className="overflow-hidden rounded-lg border">
+              {items.map((item, index) => (
+                <div
+                  key={item.id}
+                  className={`flex cursor-pointer items-center gap-3 px-4 py-3 ${index > 0 ? "border-t" : ""}`}
+                >
+                  <Checkbox
+                    aria-label={`Mark ${item.name} as purchased`}
+                    checked={false}
+                    onCheckedChange={(checked) =>
+                      onToggle(item.id, checked === true)
+                    }
+                  />
+                  <span className="flex-1 font-medium">{item.name}</span>
+                  <span className="text-muted-foreground text-sm">
+                    {item.quantity} {item.unit}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </section>
         ))}
-      </TableBody>
-    </Table>
+    </div>
   );
 }

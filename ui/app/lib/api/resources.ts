@@ -290,8 +290,50 @@ export function getInventory(): Promise<ApiResult<InventoryItem[]>> {
   return withFallback(client.GET("/api/v1/inventory"), fallbackInventory);
 }
 
+export function createInventoryItem(body: {
+  name: string;
+  quantity: number;
+  unit?: string | null;
+  location: "pantry" | "fridge" | "freezer" | "counter" | "other";
+  expires_on?: string | null;
+  source?: string | null;
+  notes?: string | null;
+}): Promise<ApiResult<InventoryItem>> {
+  return withFallback(
+    client.POST("/api/v1/inventory", { body }),
+    {} as InventoryItem,
+  );
+}
+
 export function getShoppingItems(): Promise<ApiResult<ShoppingItem[]>> {
   return withFallback(client.GET("/api/v1/shopping-list"), fallbackShopping);
+}
+
+export function createShoppingItem(body: {
+  name: string;
+  quantity: number;
+  unit?: string | null;
+  category?: string | null;
+}): Promise<ApiResult<ShoppingItem>> {
+  return withFallback(
+    client.POST("/api/v1/shopping-list", {
+      body: { ...body, status: "needed" },
+    }),
+    {} as ShoppingItem,
+  );
+}
+
+export function updateShoppingItem(
+  id: number,
+  body: { status?: "needed" | "purchased" },
+): Promise<ApiResult<ShoppingItem>> {
+  return withFallback(
+    client.PATCH("/api/v1/shopping-list/{item_id}", {
+      params: { path: { item_id: id } },
+      body,
+    }),
+    {} as ShoppingItem,
+  );
 }
 
 export function getExpiryAlerts(): Promise<ApiResult<ExpiryAlert[]>> {

@@ -1,17 +1,19 @@
-import { BellIcon, PlusIcon } from "lucide-react";
-import { MetricCard } from "~/components/metric-card";
+import { BellIcon, PlusIcon, RotateCcwIcon } from "lucide-react";
+import { useState } from "react";
+import { useRevalidator } from "react-router";
 import { PageHeader } from "~/components/page-header";
 import { SourceNotice } from "~/components/source-notice";
 import { StatusBadge } from "~/components/status-badge";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
 import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "~/components/ui/dialog";
 import {
   Field,
   FieldDescription,
@@ -20,6 +22,14 @@ import {
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
 import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "~/components/ui/select";
+import {
   Table,
   TableBody,
   TableCell,
@@ -27,25 +37,12 @@ import {
   TableHeader,
   TableRow,
 } from "~/components/ui/table";
-import { getExpiryAlerts, getInventory } from "~/lib/api/resources";
+import {
+  createInventoryItem,
+  getExpiryAlerts,
+  getInventory,
+} from "~/lib/api/resources";
 import type { Route } from "./+types/inventory";
-
-export const handle = {
-  topbar: function InventoryTopbar() {
-    return (
-      <>
-        <Button variant="outline">
-          <BellIcon data-icon="inline-start" />
-          Expiry rules
-        </Button>
-        <Button>
-          <PlusIcon data-icon="inline-start" />
-          Add item
-        </Button>
-      </>
-    );
-  },
-};
 
 export function meta() {
   return [{ title: "Inventory | Kombu" }];
@@ -56,133 +53,244 @@ export async function loader() {
     getInventory(),
     getExpiryAlerts(),
   ]);
-
   return { inventory, alerts };
 }
 
+type Location = "pantry" | "fridge" | "freezer" | "counter" | "other";
+
+const locations: Location[] = [
+  "pantry",
+  "fridge",
+  "freezer",
+  "counter",
+  "other",
+];
+
 export default function Inventory({ loaderData }: Route.ComponentProps) {
   const { inventory, alerts } = loaderData;
-  const expiringCount = alerts.data.length;
+  const revalidator = useRevalidator();
+  const [open, setOpen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [name, setName] = useState("");
+  const [quantity, setQuantity] = useState("1");
+  const [unit, setUnit] = useState("");
+  const [location, setLocation] = useState<Location>("pantry");
+  const [expiresOn, setExpiresOn] = useState("");
+
+  function openAdd(item?: (typeof inventory.data)[number]) {
+    setName(item?.name ?? "");
+    setQuantity(String(item?.quantity ?? 1));
+    setUnit(item?.unit ?? "");
+    setLocation((item?.location as Location | undefined) ?? "pantry");
+    setExpiresOn("");
+    setError(null);
+    setOpen(true);
+  }
+
+  async function saveItem(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    setSaving(true);
+    const result = await createInventoryItem({
+      name,
+      quantity: Number(quantity) || 1,
+      unit: unit || null,
+      location,
+      expires_on: expiresOn || null,
+      source: "manual",
+    });
+    setSaving(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    setOpen(false);
+    revalidator.revalidate();
+  }
 
   return (
-    <div className="flex flex-col gap-6">
-      <PageHeader
-        eyebrow="Inventory"
-        title="Know what is in the kitchen before planning what to cook."
-        description="Track pantry, fridge, freezer, and counter stock with expiry data ready for alerts and AI planning."
-      />
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <PageHeader
+          eyebrow="Kitchen stock"
+          title="Inventory"
+          description="Add, replenish, and use what you already have."
+        />
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm">
+            <BellIcon data-icon="inline-start" />
+            Expiry
+          </Button>
+          <Button size="sm" onClick={() => openAdd()}>
+            <PlusIcon data-icon="inline-start" />
+            Add item
+          </Button>
+        </div>
+      </div>
 
       <SourceNotice results={[inventory, alerts]} />
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <MetricCard
-          label="Tracked items"
-          value={inventory.data.length}
-          description="Items currently visible to the inventory API."
-        />
-        <MetricCard
-          label="Expiry alerts"
-          value={expiringCount}
-          description="Items that need attention in the next 14 days."
-        />
-        <MetricCard
-          label="Locations"
-          value={new Set(inventory.data.map((item) => item.location)).size}
-          description="Storage areas represented by current inventory."
-        />
-      </div>
-
-      <div className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
-        <Card>
-          <CardHeader>
-            <CardTitle>Stock ledger</CardTitle>
-            <CardDescription>
-              The API stores quantities, units, locations, sources, and expiry
-              dates.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Item</TableHead>
-                  <TableHead>Quantity</TableHead>
-                  <TableHead>Location</TableHead>
-                  <TableHead>Expires</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {inventory.data.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell>{item.name}</TableCell>
-                    <TableCell>
-                      {item.quantity} {item.unit}
-                    </TableCell>
-                    <TableCell>
-                      <Badge variant="outline">{item.location}</Badge>
-                    </TableCell>
-                    <TableCell>{item.expires_on ?? "Not set"}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick add</CardTitle>
-            <CardDescription>
-              Form layout for manual entry, barcode lookup, or receipt
-              extraction.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FieldGroup>
-              <Field>
-                <FieldLabel htmlFor="inventory-item">Item</FieldLabel>
-                <Input
-                  id="inventory-item"
-                  placeholder="Greek yoghurt"
-                  readOnly
-                />
-              </Field>
-              <Field>
-                <FieldLabel htmlFor="inventory-expiry">Expiry date</FieldLabel>
-                <Input id="inventory-expiry" type="date" readOnly />
-                <FieldDescription>
-                  Expiry alerts use the same field exposed by the API.
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Expiry alert queue</CardTitle>
-          <CardDescription>
-            Sorted by urgency for cooking decisions.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+      {alerts.data.length > 0 && (
+        <div className="flex flex-wrap items-center gap-2 rounded-lg border p-3">
+          <span className="font-medium text-sm">Use soon</span>
           {alerts.data.map((alert) => (
-            <div
+            <Button
               key={alert.item_id}
-              className="flex flex-col gap-2 rounded-md border p-4"
+              variant="ghost"
+              size="sm"
+              onClick={() =>
+                openAdd(
+                  inventory.data.find((item) => item.id === alert.item_id),
+                )
+              }
             >
-              <div className="flex items-center justify-between gap-3">
-                <span className="font-medium">{alert.name}</span>
-                <StatusBadge value={alert.severity} />
-              </div>
-              <p className="text-muted-foreground text-sm">
-                {alert.location} - {alert.days_until_expiry} days remaining
-              </p>
-            </div>
+              {alert.name} <StatusBadge value={alert.severity} />
+            </Button>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      )}
+
+      <div className="overflow-hidden rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Item</TableHead>
+              <TableHead>Amount</TableHead>
+              <TableHead>Storage</TableHead>
+              <TableHead>Expires</TableHead>
+              <TableHead className="w-24" />
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {inventory.data.map((item) => (
+              <TableRow key={item.id}>
+                <TableCell>
+                  <div className="font-medium">{item.name}</div>
+                  {item.notes && (
+                    <div className="text-muted-foreground text-xs">
+                      {item.notes}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {item.quantity} {item.unit}
+                </TableCell>
+                <TableCell>
+                  <Badge variant="outline">{item.location}</Badge>
+                </TableCell>
+                <TableCell>
+                  {item.expires_on ?? (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => openAdd(item)}
+                  >
+                    <RotateCcwIcon />
+                    <span className="sr-only">Re-add {item.name}</span>
+                  </Button>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent>
+          <form onSubmit={saveItem}>
+            <DialogHeader>
+              <DialogTitle>Add to inventory</DialogTitle>
+              <DialogDescription>
+                Use this for a new item or to replenish something you already
+                have.
+              </DialogDescription>
+            </DialogHeader>
+            <FieldGroup className="py-4">
+              <Field data-invalid={Boolean(error)}>
+                <FieldLabel htmlFor="inventory-name">Item</FieldLabel>
+                <Input
+                  id="inventory-name"
+                  value={name}
+                  onChange={(event) => setName(event.target.value)}
+                  required
+                  autoFocus
+                  aria-invalid={Boolean(error)}
+                />
+                <FieldDescription>{error}</FieldDescription>
+              </Field>
+              <div className="grid grid-cols-2 gap-3">
+                <Field>
+                  <FieldLabel htmlFor="inventory-quantity">Quantity</FieldLabel>
+                  <Input
+                    id="inventory-quantity"
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={quantity}
+                    onChange={(event) => setQuantity(event.target.value)}
+                  />
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="inventory-unit">Unit</FieldLabel>
+                  <Input
+                    id="inventory-unit"
+                    placeholder="bag, kg, tins"
+                    value={unit}
+                    onChange={(event) => setUnit(event.target.value)}
+                  />
+                </Field>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field>
+                  <FieldLabel>Storage</FieldLabel>
+                  <Select
+                    value={location}
+                    onValueChange={(value) => setLocation(value as Location)}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {locations.map((value) => (
+                          <SelectItem key={value} value={value}>
+                            {value}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </Field>
+                <Field>
+                  <FieldLabel htmlFor="inventory-expiry">Expiry</FieldLabel>
+                  <Input
+                    id="inventory-expiry"
+                    type="date"
+                    value={expiresOn}
+                    onChange={(event) => setExpiresOn(event.target.value)}
+                  />
+                </Field>
+              </div>
+            </FieldGroup>
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setOpen(false)}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" disabled={saving}>
+                {saving ? "Saving…" : "Save item"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
