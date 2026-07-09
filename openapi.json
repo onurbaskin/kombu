@@ -382,6 +382,46 @@
         "title": "ImportSourceRead",
         "type": "object"
       },
+      "IngredientSubstitutionRequest": {
+        "properties": {
+          "expiry_items": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Expiry Items",
+            "type": "array"
+          },
+          "inventory_items": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Inventory Items",
+            "type": "array"
+          },
+          "recipe_ingredients": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recipe Ingredients",
+            "type": "array"
+          },
+          "recipe_title": {
+            "title": "Recipe Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipe_title"
+        ],
+        "title": "IngredientSubstitutionRequest",
+        "type": "object"
+      },
       "InventoryItemCreate": {
         "description": "Inventory item creation request.",
         "properties": {
@@ -634,6 +674,19 @@
         "title": "OverviewMetric",
         "type": "object"
       },
+      "PhotoAnalysisRequest": {
+        "properties": {
+          "image_paths": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Image Paths",
+            "type": "array"
+          }
+        },
+        "title": "PhotoAnalysisRequest",
+        "type": "object"
+      },
       "ReadinessRead": {
         "description": "Readiness result for services that need dependencies.",
         "properties": {
@@ -777,6 +830,48 @@
           "title"
         ],
         "title": "RecipeCreate",
+        "type": "object"
+      },
+      "RecipeEnhanceRequest": {
+        "properties": {
+          "recipe_ingredients": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Recipe Ingredients",
+            "type": "array"
+          },
+          "recipe_instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Instructions"
+          },
+          "recipe_summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Summary"
+          },
+          "recipe_title": {
+            "title": "Recipe Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipe_title"
+        ],
+        "title": "RecipeEnhanceRequest",
         "type": "object"
       },
       "RecipeFilterValues": {
@@ -1507,6 +1602,49 @@
         "title": "ShoppingListItemUpdate",
         "type": "object"
       },
+      "ShoppingSuggestRequest": {
+        "properties": {
+          "frequently_cooked": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Frequently Cooked",
+            "type": "array"
+          },
+          "inventory_items": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Inventory Items",
+            "type": "array"
+          },
+          "planned_recipes": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Planned Recipes",
+            "type": "array"
+          },
+          "shopping_history": {
+            "items": {
+              "additionalProperties": {
+                "type": "string"
+              },
+              "type": "object"
+            },
+            "title": "Shopping History",
+            "type": "array"
+          }
+        },
+        "title": "ShoppingSuggestRequest",
+        "type": "object"
+      },
       "SystemOverviewRead": {
         "description": "Initial dashboard payload for Kombu.",
         "properties": {
@@ -1620,6 +1758,182 @@
           }
         },
         "summary": "Capabilities",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/api/v1/ai/inventory/analyze-photos": {
+      "post": {
+        "description": "Analyze food photos to identify inventory items.",
+        "operationId": "analyze_photos_api_v1_ai_inventory_analyze_photos_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/PhotoAnalysisRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Analyze Photos Api V1 Ai Inventory Analyze Photos Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Analyze Photos",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/api/v1/ai/recipes/enhance": {
+      "post": {
+        "description": "Enhance a recipe with AI-powered formatting.",
+        "operationId": "enhance_recipe_api_v1_ai_recipes_enhance_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeEnhanceRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Enhance Recipe Api V1 Ai Recipes Enhance Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Enhance Recipe",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/api/v1/ai/recipes/substitutions": {
+      "post": {
+        "description": "Get AI-powered ingredient substitution suggestions.",
+        "operationId": "ingredient_substitutions_api_v1_ai_recipes_substitutions_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/IngredientSubstitutionRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Ingredient Substitutions Api V1 Ai Recipes Substitutions Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Ingredient Substitutions",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
+    "/api/v1/ai/shopping/suggest": {
+      "post": {
+        "description": "Get AI-powered shopping list suggestions.",
+        "operationId": "shopping_suggestions_api_v1_ai_shopping_suggest_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ShoppingSuggestRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "additionalProperties": true,
+                  "title": "Response Shopping Suggestions Api V1 Ai Shopping Suggest Post",
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Shopping Suggestions",
         "tags": [
           "ai"
         ]

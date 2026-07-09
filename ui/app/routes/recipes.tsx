@@ -32,7 +32,7 @@ import { getRecipeFilters, getRecipesPaginated } from "~/lib/api/resources";
 import type { Route } from "./+types/recipes";
 
 export const handle = {
-  Topbar: function RecipesTopbar() {
+  topbar: function RecipesTopbar() {
     const [searchParams, setSearchParams] = useSearchParams();
     const revalidator = useRevalidator();
     const [searchValue, setSearchValue] = useState(

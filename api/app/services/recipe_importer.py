@@ -56,6 +56,16 @@ def import_kaggle_dataset(session: Session, import_job_id: int) -> ImportJob:
         logger.info(f"Reading CSV: {csv_path}")
 
         with open(csv_path, newline="", encoding="utf-8") as f:
+            total_rows = sum(1 for _ in f) - 1  # minus header
+
+        logger.info(f"CSV has {total_rows:,} rows")
+
+        job.total_records = total_rows
+        job.imported_records = 0
+        session.merge(job)
+        session.commit()
+
+        with open(csv_path, newline="", encoding="utf-8") as f:
             reader = csv.DictReader(f)
             logger.info(f"CSV columns: {reader.fieldnames}")
 
@@ -73,16 +83,16 @@ def import_kaggle_dataset(session: Session, import_job_id: int) -> ImportJob:
                     batch_recipes = []
 
                 if total_recipes % 10000 == 0:
-                    job.total_records = total_recipes
                     job.imported_records = total_recipes
                     session.merge(job)
                     session.commit()
-                    logger.info(f"Imported {total_recipes} recipes so far...")
+                    logger.info(
+                        f"Imported {total_recipes:,}/{total_rows:,} recipes..."
+                    )
 
             if batch_recipes:
                 total_ingredients += _flush_batch(session, batch_recipes)
 
-        job.total_records = total_recipes
         job.imported_records = total_recipes
         job.status = ImportJobStatus.COMPLETED
         session.merge(job)

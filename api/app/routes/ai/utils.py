@@ -6,26 +6,60 @@ from sqlalchemy.orm import Session
 
 def list_ai_capabilities(settings: Settings) -> list[AiCapabilityRead]:
     """List AI features that the deployment can expose."""
+    openrouter_ready = bool(settings.openrouter_api_key)
+    ai_gated = settings.ai_features_enabled
+
     return [
         AiCapabilityRead(
             key="recipe-planning",
             label="Recipe planning",
-            enabled=settings.ai_features_enabled,
-            description=("Plan meals from recipes, inventory, and diet notes."),
+            enabled=ai_gated,
+            description=(
+                "Plan meals from recipes, inventory, and diet notes."
+            ),
         ),
         AiCapabilityRead(
             key="inventory-insights",
             label="Inventory insights",
-            enabled=settings.ai_features_enabled,
+            enabled=ai_gated,
             description=(
                 "Suggest what to cook or buy from expiry dates and stock levels."
             ),
         ),
         AiCapabilityRead(
-            key="import-assistant",
-            label="Import assistant",
-            enabled=settings.ai_features_enabled,
-            description="Help map user-provided datasets into Kombu recipe fields.",
+            key="shopping-suggestions",
+            label="Smart shopping suggestions",
+            enabled=ai_gated,
+            description=(
+                "Suggest what to buy based on inventory gaps, "
+                "planned recipes, and cooking history."
+            ),
+        ),
+        AiCapabilityRead(
+            key="inventory-photos",
+            label="Photo inventory analysis",
+            enabled=ai_gated and openrouter_ready,
+            description=(
+                "Scan food photos to populate inventory automatically."
+            ),
+        ),
+        AiCapabilityRead(
+            key="recipe-enhance",
+            label="Recipe enhancement",
+            enabled=ai_gated,
+            description=(
+                "Make mechanical recipes look polished, structured, "
+                "and human-written with AI."
+            ),
+        ),
+        AiCapabilityRead(
+            key="ingredient-substitutions",
+            label="Ingredient substitutions",
+            enabled=ai_gated,
+            description=(
+                "Suggest alternatives when you're missing an ingredient "
+                "based on what's in your inventory."
+            ),
         ),
     ]
 
