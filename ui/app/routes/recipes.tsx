@@ -1,11 +1,22 @@
-import { LayoutGridIcon, ListIcon, PlusIcon, UploadIcon } from "lucide-react";
-import { useNavigation, useSearchParams } from "react-router";
-import { PageHeader } from "~/components/page-header";
+import {
+  LayoutGridIcon,
+  ListIcon,
+  PlusIcon,
+  RefreshCwIcon,
+  SearchIcon,
+  UploadIcon,
+} from "lucide-react";
+import {
+  Link,
+  useNavigation,
+  useRevalidator,
+  useSearchParams,
+} from "react-router";
 import { RecipeCard } from "~/components/recipe-card";
 import { RecipeFilters } from "~/components/recipe-filters";
 import { RecipeTable } from "~/components/recipe-table";
-import { SourceNotice } from "~/components/source-notice";
 import { Button } from "~/components/ui/button";
+import { Input } from "~/components/ui/input";
 import {
   Pagination,
   PaginationContent,
@@ -54,6 +65,7 @@ export default function Recipes({ loaderData }: Route.ComponentProps) {
   const { recipes, filters } = loaderData;
   const [searchParams, setSearchParams] = useSearchParams();
   const navigation = useNavigation();
+  const revalidator = useRevalidator();
 
   const isLoading = navigation.state === "loading";
 
@@ -102,27 +114,37 @@ export default function Recipes({ loaderData }: Route.ComponentProps) {
 
   return (
     <div className="flex flex-col gap-6">
-      <PageHeader
-        eyebrow="Cookbook"
-        title="Recipes"
-        description="Browse, search, and filter your recipe collection."
-        actions={
-          <>
-            <Button variant="outline" asChild>
-              <a href="/imports">
-                <UploadIcon data-icon="inline-start" />
-                Import recipes
-              </a>
-            </Button>
-            <Button>
-              <PlusIcon data-icon="inline-start" />
-              New recipe
-            </Button>
-          </>
-        }
-      />
-
-      <SourceNotice results={[recipes, filters]} />
+      <div className="flex items-center gap-3">
+        <div className="relative flex-1 max-w-md">
+          <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+          <Input
+            placeholder="Search recipes..."
+            value={searchValue}
+            onChange={(e) => handleSearch(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => revalidator.revalidate()}
+          disabled={revalidator.state === "loading"}
+        >
+          <RefreshCwIcon
+            className={`size-4 ${revalidator.state === "loading" ? "animate-spin" : ""}`}
+          />
+        </Button>
+        <Button>
+          <PlusIcon data-icon="inline-start" />
+          New recipe
+        </Button>
+        <Button variant="outline" asChild>
+          <Link to="/settings">
+            <UploadIcon data-icon="inline-start" />
+            Import recipes
+          </Link>
+        </Button>
+      </div>
 
       <div className="flex gap-6">
         <aside className="hidden w-[260px] shrink-0 lg:block">
