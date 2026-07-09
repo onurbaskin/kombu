@@ -13,6 +13,9 @@ export type ImportSource = ApiSchema<"ImportSourceRead">;
 export type InventoryItem = ApiSchema<"InventoryItemRead">;
 export type Readiness = ApiSchema<"ReadinessRead">;
 export type Recipe = ApiSchema<"RecipeRead">;
+export type RecipeCreate = ApiSchema<"RecipeCreate">;
+export type RecipeFilterValues = ApiSchema<"RecipeFilterValues">;
+export type RecipeListResponse = ApiSchema<"RecipeListResponse">;
 export type ScannerCapability = ApiSchema<"ScannerCapabilityRead">;
 export type ScanSession = ApiSchema<"ScanSessionRead">;
 export type ShoppingItem = ApiSchema<"ShoppingListItemRead">;
@@ -109,6 +112,7 @@ const fallbackRecipes: Recipe[] = [
     prep_minutes: 10,
     cook_minutes: 25,
     is_favorite: true,
+    instructions: null,
     created_at: timestamp,
     updated_at: timestamp,
     ingredients: [
@@ -142,6 +146,7 @@ const fallbackRecipes: Recipe[] = [
     prep_minutes: 15,
     cook_minutes: 35,
     is_favorite: false,
+    instructions: null,
     created_at: timestamp,
     updated_at: timestamp,
     ingredients: [],
@@ -296,8 +301,18 @@ export function getReadiness(): Promise<ApiResult<Readiness>> {
   );
 }
 
-export function getRecipes(): Promise<ApiResult<Recipe[]>> {
-  return withFallback(client.GET("/api/v1/recipes"), fallbackRecipes);
+export async function getRecipes(): Promise<ApiResult<Recipe[]>> {
+  const response = await withFallback(client.GET("/api/v1/recipes"), {
+    items: fallbackRecipes,
+    total: fallbackRecipes.length,
+    page: 1,
+    per_page: 50,
+  } as RecipeListResponse);
+  return {
+    data: response.data.items,
+    source: response.source,
+    error: response.error,
+  };
 }
 
 export function getInventory(): Promise<ApiResult<InventoryItem[]>> {
@@ -345,5 +360,62 @@ export function getAiCapabilities(): Promise<ApiResult<AiCapability[]>> {
   return withFallback(
     client.GET("/api/v1/ai/capabilities"),
     fallbackAiCapabilities,
+  );
+}
+
+export function getRecipesPaginated(params?: {
+  skip?: number;
+  limit?: number;
+  search?: string;
+  cuisine?: string;
+  source_type?: string;
+  sort_by?: string;
+  sort_order?: string;
+}): Promise<ApiResult<RecipeListResponse>> {
+  return withFallback(
+    client.GET("/api/v1/recipes", { params: { query: params } }),
+    {
+      items: fallbackRecipes,
+      total: fallbackRecipes.length,
+      page: 1,
+      per_page: 50,
+    } as RecipeListResponse,
+  );
+}
+
+export function getRecipeFilters(): Promise<ApiResult<RecipeFilterValues>> {
+  return withFallback(client.GET("/api/v1/recipes/filters"), {
+    cuisines: ["Everyday", "Batch cooking"],
+    source_types: ["user", "import", "web", "ai"],
+    max_prep_minutes: null,
+    max_cook_minutes: null,
+  } as RecipeFilterValues);
+}
+
+export function getRecipe(id: number): Promise<ApiResult<Recipe>> {
+  return withFallback(
+    client.GET("/api/v1/recipes/{recipe_id}", {
+      params: { path: { recipe_id: id } },
+    }),
+    fallbackRecipes[0] ?? ({} as unknown as Recipe),
+  );
+}
+
+export function createRecipe(body: RecipeCreate): Promise<ApiResult<Recipe>> {
+  return withFallback(
+    client.POST("/api/v1/recipes", {
+      body,
+    }),
+    {} as unknown as Recipe,
+  );
+}
+
+export function createImportJob(body: {
+  source_name: string;
+  source_type: string;
+}): Promise<ApiResult<ImportJob>> {
+  return withFallback(
+    client.POST("/api/v1/imports/jobs", { body }),
+    {} as unknown as ImportJob,
   );
 }
