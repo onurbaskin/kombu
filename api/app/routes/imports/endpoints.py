@@ -1,6 +1,7 @@
+import threading
 from typing import Annotated
 
-from api.app.database import get_session
+from api.app.database import SessionLocal, get_session
 from api.app.routes.imports.schemas import (
     ImportJobCreate,
     ImportJobRead,
@@ -16,6 +17,17 @@ from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/imports", tags=["imports"])
 SessionDep = Annotated[Session, Depends(get_session)]
+
+
+def _run_import_background(job_id: int) -> None:
+    """Run a Kaggle dataset import in a background thread."""
+    from api.app.services.recipe_importer import import_kaggle_dataset
+
+    session = SessionLocal()
+    try:
+        import_kaggle_dataset(session, job_id)
+    finally:
+        session.close()
 
 
 @router.get("/sources", response_model=list[ImportSourceRead])
@@ -35,11 +47,12 @@ def create_job(
     payload: ImportJobCreate,
     session: SessionDep,
 ) -> ImportJobRead:
-    """Create an import job and optionally execute it."""
+    """Create an import job and execute it in the background."""
     job = create_import_job(session, payload)
     if payload.source_type == "dataset":
-        from api.app.services.recipe_importer import import_kaggle_dataset
-
-        import_kaggle_dataset(session, job.id)
-        session.refresh(job)
+        threading.Thread(
+            target=_run_import_background,
+            args=(job.id,),
+            daemon=True,
+        ).start()
     return ImportJobRead.model_validate(job)
