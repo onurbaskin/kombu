@@ -2,6 +2,7 @@ import {
   ArrowLeftIcon,
   ClockIcon,
   ExternalLinkIcon,
+  ImageIcon,
   ShoppingCartIcon,
   UsersIcon,
   WandSparklesIcon,
@@ -40,6 +41,20 @@ export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
   const recipe = recipeResult.data;
   const navigation = useNavigation();
   const isLoading = navigation.state === "loading";
+
+  const imageUrl = recipe.image_url
+    ? recipe.image_url.startsWith("http://") ||
+      recipe.image_url.startsWith("https://")
+      ? recipe.image_url
+      : `https://${recipe.image_url}`
+    : null;
+
+  const sourceUrl = recipe.source_url
+    ? recipe.source_url.startsWith("http://") ||
+      recipe.source_url.startsWith("https://")
+      ? recipe.source_url
+      : `https://${recipe.source_url}`
+    : null;
 
   if (isLoading) {
     return (
@@ -96,11 +111,22 @@ export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
         Back to recipes
       </Link>
 
-      <div className="mb-6 overflow-hidden rounded-xl bg-muted aspect-video flex items-center justify-center border">
-        <span className="text-muted-foreground text-sm">
-          Recipe image placeholder
-        </span>
-      </div>
+      {imageUrl ? (
+        <div className="mb-6 overflow-hidden rounded-xl bg-muted aspect-video border">
+          <img
+            src={imageUrl}
+            alt={recipe.title}
+            className="h-full w-full object-cover"
+            onError={(e) => {
+              (e.target as HTMLImageElement).style.display = "none";
+            }}
+          />
+        </div>
+      ) : (
+        <div className="mb-6 overflow-hidden rounded-xl bg-muted aspect-video flex items-center justify-center border">
+          <ImageIcon className="size-12 text-muted-foreground/50" />
+        </div>
+      )}
 
       <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
         <h1 className="font-bold text-2xl md:text-3xl tracking-tight">
@@ -151,12 +177,12 @@ export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
             </CardContent>
           </Card>
         )}
-        {recipe.source_url && (
+        {sourceUrl && (
           <Card className="border-dashed">
             <CardContent className="flex items-center gap-2 py-2 px-4">
               <ExternalLinkIcon className="size-4 text-muted-foreground" />
               <a
-                href={recipe.source_url}
+                href={sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-sm hover:text-primary transition-colors"

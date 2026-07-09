@@ -651,6 +651,8 @@ export interface components {
       cook_minutes?: number | null;
       /** Cuisine */
       cuisine?: string | null;
+      /** Image Url */
+      image_url?: string | null;
       /** Ingredients */
       ingredients?: components["schemas"]["RecipeIngredientCreate"][];
       /** Instructions */
@@ -749,6 +751,8 @@ export interface components {
       cuisine: string | null;
       /** Id */
       id: number;
+      /** Image Url */
+      image_url: string | null;
       /** Ingredients */
       ingredients: components["schemas"]["RecipeIngredientRead"][];
       /** Instructions */

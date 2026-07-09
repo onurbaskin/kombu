@@ -7,6 +7,8 @@ import {
   PlusIcon,
   ShieldCheckIcon,
 } from "lucide-react";
+import { useEffect } from "react";
+import { useRevalidator } from "react-router";
 import { PageHeader } from "~/components/page-header";
 import { SourceNotice } from "~/components/source-notice";
 import { StatusBadge } from "~/components/status-badge";
@@ -27,6 +29,7 @@ import {
   FieldLabel,
   FieldTitle,
 } from "~/components/ui/field";
+import { Progress } from "~/components/ui/progress";
 import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
 import {
@@ -69,6 +72,14 @@ export async function loader() {
 export default function Settings({ loaderData }: Route.ComponentProps) {
   const { overview, user, readiness, sources, jobs, aiCapabilities } =
     loaderData;
+  const revalidator = useRevalidator();
+
+  useEffect(() => {
+    const hasRunningJobs = jobs.data.some((j) => j.status === "running");
+    if (!hasRunningJobs) return;
+    const interval = setInterval(() => revalidator.revalidate(), 3000);
+    return () => clearInterval(interval);
+  }, [jobs.data, revalidator]);
 
   return (
     <div className="flex flex-col gap-6">
@@ -309,31 +320,52 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
             <>
               <Separator className="my-4" />
               <div className="flex flex-col gap-3">
-                <h4 className="font-semibold text-sm">Active Imports</h4>
-                {jobs.data.map((job) => (
-                  <div
-                    key={job.id}
-                    className="flex items-center justify-between rounded-md border p-3"
-                  >
-                    <div className="flex items-center gap-3">
-                      {job.status === "running" && (
-                        <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
-                      )}
-                      <div>
-                        <p className="font-medium text-sm">{job.source_name}</p>
-                        <p className="text-muted-foreground text-xs">
-                          {job.imported_records}/{job.total_records} recipes
-                          {job.error_message && (
-                            <span className="text-destructive ml-2">
-                              Error: {job.error_message}
-                            </span>
+                <h4 className="font-semibold text-sm">Import Jobs</h4>
+                {jobs.data.map((job) => {
+                  const progress =
+                    job.total_records > 0
+                      ? Math.round(
+                          (job.imported_records / job.total_records) * 100,
+                        )
+                      : 0;
+
+                  return (
+                    <div
+                      key={job.id}
+                      className="flex flex-col gap-2 rounded-md border p-3"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          {job.status === "running" && (
+                            <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
                           )}
-                        </p>
+                          <div>
+                            <p className="font-medium text-sm">
+                              {job.source_name}
+                            </p>
+                            <p className="text-muted-foreground text-xs">
+                              {job.imported_records.toLocaleString()}
+                              {" / "}
+                              {job.total_records > 0
+                                ? job.total_records.toLocaleString()
+                                : "—"}{" "}
+                              recipes
+                            </p>
+                          </div>
+                        </div>
+                        <StatusBadge value={job.status} />
                       </div>
+                      {job.status === "running" && (
+                        <Progress value={progress} className="h-2" />
+                      )}
+                      {job.status === "failed" && job.error_message && (
+                        <p className="text-destructive text-xs">
+                          {job.error_message}
+                        </p>
+                      )}
                     </div>
-                    <StatusBadge value={job.status} />
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </>
           )}
