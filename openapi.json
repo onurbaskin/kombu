@@ -687,6 +687,17 @@
             "title": "Ingredients",
             "type": "array"
           },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
           "is_favorite": {
             "default": false,
             "title": "Is Favorite",
@@ -754,6 +765,53 @@
           "title"
         ],
         "title": "RecipeCreate",
+        "type": "object"
+      },
+      "RecipeFilterValues": {
+        "description": "Available filter values for the recipe listing sidebar.",
+        "properties": {
+          "cuisines": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Cuisines",
+            "type": "array"
+          },
+          "max_cook_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Cook Minutes"
+          },
+          "max_prep_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Max Prep Minutes"
+          },
+          "source_types": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Source Types",
+            "type": "array"
+          }
+        },
+        "required": [
+          "cuisines",
+          "source_types"
+        ],
+        "title": "RecipeFilterValues",
         "type": "object"
       },
       "RecipeIngredientCreate": {
@@ -870,6 +928,38 @@
         "title": "RecipeIngredientRead",
         "type": "object"
       },
+      "RecipeListResponse": {
+        "description": "Paginated recipe list.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeRead"
+            },
+            "title": "Items",
+            "type": "array"
+          },
+          "page": {
+            "title": "Page",
+            "type": "integer"
+          },
+          "per_page": {
+            "title": "Per Page",
+            "type": "integer"
+          },
+          "total": {
+            "title": "Total",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "items",
+          "total",
+          "page",
+          "per_page"
+        ],
+        "title": "RecipeListResponse",
+        "type": "object"
+      },
       "RecipeRead": {
         "description": "Recipe response with ingredients.",
         "properties": {
@@ -910,6 +1000,17 @@
             },
             "title": "Ingredients",
             "type": "array"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
           },
           "is_favorite": {
             "title": "Is Favorite",
@@ -976,6 +1077,7 @@
           "id",
           "title",
           "summary",
+          "instructions",
           "source_url",
           "source_type",
           "cuisine",
@@ -1617,7 +1719,7 @@
         ]
       },
       "post": {
-        "description": "Create an import job.",
+        "description": "Create an import job and optionally execute it.",
         "operationId": "create_job_api_v1_imports_jobs_post",
         "requestBody": {
           "content": {
@@ -1779,7 +1881,7 @@
     },
     "/api/v1/recipes": {
       "get": {
-        "description": "List recipes stored in Kombu.",
+        "description": "List recipes stored in Kombu with filtering, sorting, and pagination.",
         "operationId": "index_api_v1_recipes_get",
         "parameters": [
           {
@@ -1798,6 +1900,81 @@
               ],
               "title": "Search"
             }
+          },
+          {
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "minimum": 0,
+              "title": "Skip",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 50,
+              "maximum": 100,
+              "minimum": 1,
+              "title": "Limit",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "cuisine",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Cuisine"
+            }
+          },
+          {
+            "in": "query",
+            "name": "source_type",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Source Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_by",
+            "required": false,
+            "schema": {
+              "default": "updated_at",
+              "title": "Sort By",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sort_order",
+            "required": false,
+            "schema": {
+              "default": "desc",
+              "title": "Sort Order",
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -1805,11 +1982,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "items": {
-                    "$ref": "#/components/schemas/RecipeRead"
-                  },
-                  "title": "Response Index Api V1 Recipes Get",
-                  "type": "array"
+                  "$ref": "#/components/schemas/RecipeListResponse"
                 }
               }
             },
@@ -1867,6 +2040,28 @@
           }
         },
         "summary": "Create",
+        "tags": [
+          "recipes"
+        ]
+      }
+    },
+    "/api/v1/recipes/filters": {
+      "get": {
+        "description": "Return distinct filter values for the recipe listing.",
+        "operationId": "filter_values_api_v1_recipes_filters_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeFilterValues"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Filter Values",
         "tags": [
           "recipes"
         ]

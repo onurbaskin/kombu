@@ -79,7 +79,7 @@ export interface paths {
     put?: never;
     /**
      * Create Job
-     * @description Create an import job.
+     * @description Create an import job and optionally execute it.
      */
     post: operations["create_job_api_v1_imports_jobs_post"];
     delete?: never;
@@ -141,7 +141,7 @@ export interface paths {
     };
     /**
      * Index
-     * @description List recipes stored in Kombu.
+     * @description List recipes stored in Kombu with filtering, sorting, and pagination.
      */
     get: operations["index_api_v1_recipes_get"];
     put?: never;
@@ -150,6 +150,26 @@ export interface paths {
      * @description Create a recipe.
      */
     post: operations["create_api_v1_recipes_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/recipes/filters": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Filter Values
+     * @description Return distinct filter values for the recipe listing.
+     */
+    get: operations["filter_values_api_v1_recipes_filters_get"];
+    put?: never;
+    post?: never;
     delete?: never;
     options?: never;
     head?: never;
@@ -633,6 +653,8 @@ export interface components {
       cuisine?: string | null;
       /** Ingredients */
       ingredients?: components["schemas"]["RecipeIngredientCreate"][];
+      /** Instructions */
+      instructions?: string | null;
       /**
        * Is Favorite
        * @default false
@@ -650,6 +672,20 @@ export interface components {
       title: string;
       /** Yield Servings */
       yield_servings?: number | null;
+    };
+    /**
+     * RecipeFilterValues
+     * @description Available filter values for the recipe listing sidebar.
+     */
+    RecipeFilterValues: {
+      /** Cuisines */
+      cuisines: string[];
+      /** Max Cook Minutes */
+      max_cook_minutes?: number | null;
+      /** Max Prep Minutes */
+      max_prep_minutes?: number | null;
+      /** Source Types */
+      source_types: string[];
     };
     /**
      * RecipeIngredientCreate
@@ -684,6 +720,20 @@ export interface components {
       unit?: string | null;
     };
     /**
+     * RecipeListResponse
+     * @description Paginated recipe list.
+     */
+    RecipeListResponse: {
+      /** Items */
+      items: components["schemas"]["RecipeRead"][];
+      /** Page */
+      page: number;
+      /** Per Page */
+      per_page: number;
+      /** Total */
+      total: number;
+    };
+    /**
      * RecipeRead
      * @description Recipe response with ingredients.
      */
@@ -701,6 +751,8 @@ export interface components {
       id: number;
       /** Ingredients */
       ingredients: components["schemas"]["RecipeIngredientRead"][];
+      /** Instructions */
+      instructions: string | null;
       /** Is Favorite */
       is_favorite: boolean;
       /** Prep Minutes */
@@ -1122,6 +1174,12 @@ export interface operations {
     parameters: {
       query?: {
         search?: string | null;
+        skip?: number;
+        limit?: number;
+        cuisine?: string | null;
+        source_type?: string | null;
+        sort_by?: string;
+        sort_order?: string;
       };
       header?: never;
       path?: never;
@@ -1135,7 +1193,7 @@ export interface operations {
           [name: string]: unknown;
         };
         content: {
-          "application/json": components["schemas"]["RecipeRead"][];
+          "application/json": components["schemas"]["RecipeListResponse"];
         };
       };
       /** @description Validation Error */
@@ -1178,6 +1236,26 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  filter_values_api_v1_recipes_filters_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecipeFilterValues"];
         };
       };
     };
