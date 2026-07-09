@@ -1,6 +1,7 @@
 # ruff: noqa: E501
 """AI provider service using LiteLLM for multi-provider support."""
 
+import asyncio
 import json
 import logging
 
@@ -17,11 +18,23 @@ from api.app.services.provider_credentials import decrypt_api_key, normalize_mod
 logger = logging.getLogger(__name__)
 
 KNOWN_PROVIDERS = [
-    {"key": "openai", "label": "OpenAI", "docs": "https://platform.openai.com/api-keys"},
-    {"key": "anthropic", "label": "Anthropic", "docs": "https://console.anthropic.com/"},
+    {
+        "key": "openai",
+        "label": "OpenAI",
+        "docs": "https://platform.openai.com/api-keys",
+    },
+    {
+        "key": "anthropic",
+        "label": "Anthropic",
+        "docs": "https://console.anthropic.com/",
+    },
     {"key": "openrouter", "label": "OpenRouter", "docs": "https://openrouter.ai/keys"},
     {"key": "groq", "label": "Groq", "docs": "https://console.groq.com/keys"},
-    {"key": "google", "label": "Google AI", "docs": "https://aistudio.google.com/apikey"},
+    {
+        "key": "google",
+        "label": "Google AI",
+        "docs": "https://aistudio.google.com/apikey",
+    },
     {"key": "deepseek", "label": "DeepSeek", "docs": "https://platform.deepseek.com/"},
     {"key": "together_ai", "label": "Together AI", "docs": "https://api.together.xyz/"},
     {"key": "mistral", "label": "Mistral AI", "docs": "https://console.mistral.ai/"},
@@ -51,6 +64,27 @@ class EnhancedRecipe(BaseModel):
     summary: str
     instructions: str
     tips: list[str] = Field(default_factory=list)
+
+
+class ImportedRecipeIngredient(BaseModel):
+    """Ingredient extracted from a public recipe page."""
+
+    name: str = Field(min_length=1, max_length=240)
+    quantity: float | None = Field(default=None, ge=0)
+    unit: str | None = Field(default=None, max_length=80)
+
+
+class ImportedWebRecipe(BaseModel):
+    """Recipe data extracted by an AI provider from webpage text."""
+
+    title: str = Field(min_length=1, max_length=240)
+    summary: str | None = None
+    instructions: str | None = None
+    cuisine: str | None = Field(default=None, max_length=120)
+    yield_servings: int | None = Field(default=None, ge=1)
+    prep_minutes: int | None = Field(default=None, ge=0)
+    cook_minutes: int | None = Field(default=None, ge=0)
+    ingredients: list[ImportedRecipeIngredient] = Field(default_factory=list)
 
 
 def _get_active_provider(session: Session) -> AiProviderConfig | None:
@@ -103,7 +137,7 @@ async def _call_llm(
             kwargs["response_format"] = response_format
 
         try:
-            response = litellm_completion(**kwargs)  # type: ignore[arg-type]
+            response = await asyncio.to_thread(litellm_completion, **kwargs)  # type: ignore[arg-type]
             return response.choices[0].message.content or ""
         except LiteLLMAPIError as e:
             logger.error("LiteLLM API error: %s", e)
@@ -214,6 +248,31 @@ Return JSON with: title (polished), summary (2-3 warm sentences), instructions (
     except Exception as e:
         logger.exception("Failed to enhance recipe")
         return {"error": str(e)}
+
+
+async def extract_web_recipe(page_text: str) -> ImportedWebRecipe:
+    """Extract a validated recipe from bounded readable webpage text."""
+    prompt = f"""Extract one recipe from this webpage text.
+
+Return valid JSON with title, summary, instructions, cuisine, yield_servings,
+prep_minutes, cook_minutes, and ingredients. Each ingredient needs name and may
+include quantity and unit. Do not invent facts that are absent from the page.
+
+Webpage text:
+{page_text}"""
+    result = await _call_llm(
+        [
+            {
+                "role": "system",
+                "content": "You extract recipes. Return only JSON matching the requested recipe structure.",
+            },
+            {"role": "user", "content": prompt},
+        ],
+        response_format=ImportedWebRecipe,
+        temperature=0.1,
+        max_tokens=4096,
+    )
+    return ImportedWebRecipe.model_validate_json(result)
 
 
 async def analyze_inventory_photos(
