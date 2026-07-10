@@ -55,3 +55,21 @@ KOMBU_ENCRYPTION_KEY=your-generated-fernet-key
 
 Keep this value stable. Changing or losing it makes previously stored provider
 keys unreadable. Do not commit `.env` or the encryption key.
+
+The same encryption key protects recipe-source credentials configured through
+Settings. Source definitions ship with Kombu; self-hosters provide only the
+account credentials required by a source, and those credentials are stored in
+SQLite rather than environment variables.
+
+## Database Upgrades
+
+Revision `9c41f7a0d2e8` adds administrator-managed users and invitations,
+persisted feature and AI capability switches, and encrypted integration
+credentials. Apply and verify it with:
+
+```sh
+uv run alembic -c api/alembic.ini upgrade head
+uv run alembic -c api/alembic.ini current
+```
+
+A successful installation reports `9c41f7a0d2e8 (head)`.
