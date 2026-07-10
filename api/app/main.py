@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.app.config import Settings, get_settings
 from api.app.routes.ai.endpoints import router as ai_router
 from api.app.routes.alerts.endpoints import router as alerts_router
+from api.app.routes.blobs.endpoints import router as blobs_router
 from api.app.routes.health.endpoints import router as health_router
 from api.app.routes.imports.endpoints import router as imports_router
 from api.app.routes.inventory.endpoints import router as inventory_router
@@ -36,6 +37,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     )
 
     app.include_router(health_router)
+    app.include_router(blobs_router)
     app.include_router(system_router, prefix=app_settings.api_prefix)
     app.include_router(users_router, prefix=app_settings.api_prefix)
     app.include_router(recipes_router, prefix=app_settings.api_prefix)

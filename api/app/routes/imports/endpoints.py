@@ -1,8 +1,7 @@
-import threading
 from typing import Annotated
 
 from api.app.auth import require_permission
-from api.app.database import SessionLocal, get_session
+from api.app.database import get_session
 from api.app.models import IntegrationCredential, User
 from api.app.routes.imports.schemas import (
     ImportCredentialRead,
@@ -29,17 +28,6 @@ router = APIRouter(prefix="/imports", tags=["imports"])
 SessionDep = Annotated[Session, Depends(get_session)]
 EditorDep = Annotated[User, Depends(require_permission("imports:write"))]
 ImportsEnabledDep = Annotated[None, Depends(require_setting("feature.imports", True))]
-
-
-def _run_import_background(job_id: int) -> None:
-    """Run a Kaggle dataset import in a background thread."""
-    from api.app.services.recipe_importer import import_kaggle_dataset
-
-    session = SessionLocal()
-    try:
-        import_kaggle_dataset(session, job_id)
-    finally:
-        session.close()
 
 
 @router.get("/sources", response_model=list[ImportSourceRead])
@@ -112,7 +100,7 @@ def create_job(
     _editor: EditorDep,
     _enabled: ImportsEnabledDep,
 ) -> ImportJobRead:
-    """Create an import job and execute it in the background."""
+    """Create a durable import job for the Kombu worker."""
     if payload.source_type != "dataset":
         raise HTTPException(
             status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
@@ -131,9 +119,4 @@ def create_job(
         )
 
     job = create_import_job(session, payload)
-    threading.Thread(
-        target=_run_import_background,
-        args=(job.id,),
-        daemon=True,
-    ).start()
     return ImportJobRead.model_validate(job)

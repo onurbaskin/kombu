@@ -1,4 +1,5 @@
 from functools import lru_cache
+from typing import Literal
 
 from pydantic import computed_field
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -19,6 +20,14 @@ class Settings(BaseSettings):
     scanner_upload_dir: str = "var/scans"
     recipe_import_dir: str = "var/imports"
     encryption_key: str = ""
+    worker_poll_seconds: float = 5.0
+    cache_url: str | None = None
+    blob_storage_backend: Literal["filesystem", "s3"] = "filesystem"
+    blob_storage_root: str = "var/blobs"
+    s3_endpoint_url: str | None = None
+    s3_bucket: str = "kombu"
+    s3_access_key: str | None = None
+    s3_secret_key: str | None = None
 
     model_config = SettingsConfigDict(
         env_file=".env",
