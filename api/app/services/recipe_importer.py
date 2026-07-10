@@ -67,8 +67,10 @@ def import_kaggle_dataset(session: Session, import_job_id: int) -> ImportJob:
         csv_path = csv_files[0]
         logger.info(f"Reading CSV: {csv_path}")
 
+        # Count parsed records rather than physical lines because quoted CSV
+        # fields may legally contain embedded newlines.
         with open(csv_path, newline="", encoding="utf-8") as f:
-            total_rows = sum(1 for _ in f) - 1  # minus header
+            total_rows = sum(1 for _ in csv.DictReader(f))
 
         logger.info(f"CSV has {total_rows:,} rows")
 
