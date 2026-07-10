@@ -35,6 +35,12 @@ cp .env.example .env
 docker compose up --build
 ```
 
+For self-hosting deployments, choose a scale from
+[`deploy/README.md`](deploy/README.md): Basic Compose uses SQLite and local
+filesystem storage, Production Compose uses PostgreSQL, and the planned
+Scale-out deployment adds workers, Valkey, and S3-compatible storage. The
+complete delivery contract is documented in [`SELF_HOSTING.md`](SELF_HOSTING.md).
+
 ## AI Provider Encryption
 
 AI providers and models are configured in **Settings → AI Providers**. Kombu
