@@ -152,7 +152,11 @@ def test_feature_and_capability_switches_persist_and_gate_requests() -> None:
         assert feature.status_code == 200
         assert capability.status_code == 200
         with factory() as session:
-            assert session.get(AppSetting, "feature.ai").value == "true"
-            assert session.get(AppSetting, "ai.shopping_suggestions").value == "true"
+            ai_feature = session.get(AppSetting, "feature.ai")
+            shopping_capability = session.get(AppSetting, "ai.shopping_suggestions")
+            assert ai_feature is not None
+            assert shopping_capability is not None
+            assert ai_feature.value == "true"
+            assert shopping_capability.value == "true"
     finally:
         app.dependency_overrides.clear()
