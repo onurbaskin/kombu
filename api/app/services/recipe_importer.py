@@ -9,11 +9,17 @@ from pathlib import Path
 from typing import Any
 
 import kagglehub  # type: ignore[import-untyped]
-from sqlalchemy import insert
+from sqlalchemy import insert, select
 from sqlalchemy.orm import Session
 
-from api.app.config import get_settings
-from api.app.models import ImportJob, ImportJobStatus, Recipe, RecipeIngredient
+from api.app.models import (
+    ImportJob,
+    ImportJobStatus,
+    IntegrationCredential,
+    Recipe,
+    RecipeIngredient,
+)
+from api.app.services.provider_credentials import decrypt_api_key
 
 logger = logging.getLogger(__name__)
 
@@ -21,7 +27,6 @@ BATCH_SIZE = 1000
 
 
 def import_kaggle_dataset(session: Session, import_job_id: int) -> ImportJob:
-    settings = get_settings()
     job = session.get(ImportJob, import_job_id)
     if not job:
         raise ValueError(f"ImportJob {import_job_id} not found")
@@ -30,15 +35,21 @@ def import_kaggle_dataset(session: Session, import_job_id: int) -> ImportJob:
         job.status = ImportJobStatus.RUNNING
         session.commit()
 
-        os.environ["KAGGLE_USERNAME"] = settings.kaggle_username
-        os.environ["KAGGLE_KEY"] = settings.kaggle_key
-
-        if not settings.kaggle_username or not settings.kaggle_key:
+        credential = session.scalar(
+            select(IntegrationCredential).where(
+                IntegrationCredential.integration_key == "kaggle-recipes"
+            )
+        )
+        if credential is None or not credential.account_name:
             raise ValueError(
-                "KAGGLE_USERNAME and KAGGLE_KEY must be set. "
+                "Kaggle credentials must be configured in Kombu settings. "
                 "Create a free Kaggle account and generate an API token at "
                 "https://www.kaggle.com/settings"
             )
+        # kagglehub reads these process-local variables; values originate from
+        # the encrypted database record and are never logged or persisted raw.
+        os.environ["KAGGLE_USERNAME"] = credential.account_name
+        os.environ["KAGGLE_KEY"] = decrypt_api_key(credential.encrypted_secret)
 
         logger.info(
             "Downloading Kaggle dataset 'wilmerarltstrmberg/recipe-dataset-over-2m'..."

@@ -14,6 +14,21 @@ class ImportSourceRead(BaseModel):
     ready_for_import: bool
 
 
+class ImportCredentialUpdate(BaseModel):
+    """User-supplied account and secret for a maintainer-defined source."""
+
+    account_name: str = Field(min_length=1, max_length=320)
+    secret: str = Field(min_length=1, max_length=512)
+
+
+class ImportCredentialRead(BaseModel):
+    """Credential status that never exposes stored secret material."""
+
+    source_key: str
+    account_name: str | None
+    configured: bool
+
+
 class ImportJobCreate(BaseModel):
     """Import job creation request."""
 

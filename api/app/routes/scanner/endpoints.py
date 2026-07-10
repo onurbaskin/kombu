@@ -1,6 +1,8 @@
 from typing import Annotated
 
+from api.app.auth import require_permission
 from api.app.database import get_session
+from api.app.models import User
 from api.app.routes.scanner.schemas import (
     ScannerCapabilityRead,
     ScanSessionCreate,
@@ -11,11 +13,14 @@ from api.app.routes.scanner.utils import (
     list_scan_sessions,
     list_scanner_capabilities,
 )
+from api.app.runtime_settings import require_setting
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/scanner", tags=["scanner"])
 SessionDep = Annotated[Session, Depends(get_session)]
+EditorDep = Annotated[User, Depends(require_permission("scanner:write"))]
+ScannerEnabledDep = Annotated[None, Depends(require_setting("feature.scanner", True))]
 
 
 @router.get("/capabilities", response_model=list[ScannerCapabilityRead])
@@ -39,6 +44,8 @@ def sessions(session: SessionDep) -> list[ScanSessionRead]:
 def create_session(
     payload: ScanSessionCreate,
     session: SessionDep,
+    _editor: EditorDep,
+    _enabled: ScannerEnabledDep,
 ) -> ScanSessionRead:
     """Create a scanner session."""
     scan_session = create_scan_session(session, payload)

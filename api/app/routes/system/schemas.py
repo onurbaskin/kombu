@@ -10,6 +10,12 @@ class FeatureFlag(BaseModel):
     description: str
 
 
+class FeatureFlagUpdate(BaseModel):
+    """Administrator update for a persisted feature flag."""
+
+    enabled: bool
+
+
 class OverviewMetric(BaseModel):
     """Dashboard metric for the system overview."""
 

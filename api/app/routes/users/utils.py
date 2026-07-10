@@ -1,20 +1,15 @@
+from api.app.auth import permissions_for
+from api.app.models import User
 from api.app.routes.users.schemas import CurrentUserRead
 
 
-def build_current_user() -> CurrentUserRead:
-    """Build a safe local-development current user placeholder."""
+def build_current_user(user: User) -> CurrentUserRead:
+    """Build the current-user response without exposing account internals."""
     return CurrentUserRead(
-        id="local-admin",
-        email="admin@example.invalid",
-        display_name="Local Administrator",
-        role="owner",
+        id=user.id,
+        email=user.email,
+        display_name=user.display_name,
+        role=user.role,
         auth_provider="local",
-        permissions=[
-            "recipes:write",
-            "inventory:write",
-            "shopping:write",
-            "imports:write",
-            "scanner:write",
-            "settings:read",
-        ],
+        permissions=permissions_for(user.role),
     )

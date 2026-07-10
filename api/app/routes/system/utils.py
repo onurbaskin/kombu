@@ -15,6 +15,7 @@ from api.app.routes.system.schemas import (
     ReadinessRead,
     SystemOverviewRead,
 )
+from api.app.runtime_settings import is_setting_enabled
 from sqlalchemy import func, select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
@@ -29,19 +30,19 @@ def count_rows(session: Session, model: Any) -> int:
     return int(value or 0)
 
 
-def build_features(settings: Settings) -> list[FeatureFlag]:
+def build_features(session: Session) -> list[FeatureFlag]:
     """Build feature flags for the current deployment."""
     return [
         FeatureFlag(
             key="ai",
             label="AI assistance",
-            enabled=settings.ai_features_enabled,
+            enabled=is_setting_enabled(session, "feature.ai", False),
             description="Provider-neutral recipe, inventory, and planning assistance.",
         ),
         FeatureFlag(
             key="scanner",
             label="Scanner workflows",
-            enabled=True,
+            enabled=is_setting_enabled(session, "feature.scanner", True),
             description=(
                 "Camera, barcode, receipt, and dedicated scanner capture sessions."
             ),
@@ -49,17 +50,9 @@ def build_features(settings: Settings) -> list[FeatureFlag]:
         FeatureFlag(
             key="imports",
             label="Recipe imports",
-            enabled=True,
+            enabled=is_setting_enabled(session, "feature.imports", True),
             description=(
                 "Import-ready queues for datasets, CSV, JSON, and web recipes."
-            ),
-        ),
-        FeatureFlag(
-            key="sso",
-            label="SSO ready",
-            enabled=False,
-            description=(
-                "Multi-user data model is ready for a future OIDC/SAML provider."
             ),
         ),
     ]
@@ -117,7 +110,7 @@ def build_overview(session: Session, settings: Settings) -> SystemOverviewRead:
         app_name=settings.app_name,
         environment=settings.environment,
         metrics=metrics,
-        features=build_features(settings),
+        features=build_features(session),
         navigation=build_navigation(),
     )
 

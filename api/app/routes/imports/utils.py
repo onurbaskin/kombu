@@ -1,14 +1,19 @@
-from api.app.config import get_settings
-from api.app.models import ImportJob
+from api.app.models import ImportJob, IntegrationCredential
 from api.app.routes.imports.schemas import ImportJobCreate, ImportSourceRead
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 
-def list_import_sources() -> list[ImportSourceRead]:
+def list_import_sources(session: Session) -> list[ImportSourceRead]:
     """List import sources that Kombu can expose to users."""
-    settings = get_settings()
-    kaggle_ready = bool(settings.kaggle_username and settings.kaggle_key)
+    kaggle_ready = (
+        session.scalar(
+            select(IntegrationCredential.id).where(
+                IntegrationCredential.integration_key == "kaggle-recipes"
+            )
+        )
+        is not None
+    )
     return [
         ImportSourceRead(
             key="kaggle-recipes",
