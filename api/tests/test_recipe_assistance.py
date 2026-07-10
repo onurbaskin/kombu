@@ -12,6 +12,7 @@ from api.app.routes.recipes.utils import (
     create_recipe,
     get_filter_values,
     latest_recipe_enhancement,
+    normalize_ingredient_filter,
 )
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session
@@ -46,9 +47,18 @@ def test_recipe_filters_are_derived_from_stored_ingredients() -> None:
         values = get_filter_values(session)
 
         assert values.cuisines == ["Italian"]
-        assert values.ingredients == ["Tomato"]
+        assert values.ingredients == ["tomato"]
         assert count_recipes(session, ingredient="tomato") == 1
         assert count_recipes(session, max_total_minutes=15) == 0
+
+
+def test_ingredient_filter_labels_remove_amounts_and_units() -> None:
+    """Imported ingredient lines should produce useful filter labels."""
+    assert normalize_ingredient_filter("1/2 tsp. salt") == "salt"
+    assert normalize_ingredient_filter("2 cups all-purpose flour") == (
+        "all-purpose flour"
+    )
+    assert normalize_ingredient_filter("1 c. sugar") == "sugar"
 
 
 def test_recipe_enhancement_uses_latest_cached_response() -> None:

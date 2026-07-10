@@ -1,5 +1,6 @@
 import json
 import re
+from collections import Counter
 from datetime import date
 from typing import Any
 
@@ -23,6 +24,25 @@ _SORT_COLUMNS = {
     "prep_minutes": Recipe.prep_minutes,
     "cook_minutes": Recipe.cook_minutes,
 }
+
+_LEADING_INGREDIENT_AMOUNT = re.compile(
+    r"^\s*(?:\d+(?:[./]\d+)?|[¼½¾⅓⅔⅛⅜⅝⅞])(?:\s+to\s+\d+(?:[./]\d+)?)?\s*",
+    re.IGNORECASE,
+)
+_LEADING_INGREDIENT_UNIT = re.compile(
+    r"^(?:(?:c\.|t\.|tsp|tbsp|teaspoons?|tablespoons?|cups?|ounces?|oz|pounds?|lbs?|"
+    r"grams?|g|kilograms?|kg|milliliters?|ml|liters?|l|cloves?|cans?|packages?)"
+    r"\.?\s+(?:of\s+)?)",
+    re.IGNORECASE,
+)
+
+
+def normalize_ingredient_filter(name: str) -> str:
+    """Turn a display ingredient line into a useful filter label."""
+    normalized = _LEADING_INGREDIENT_AMOUNT.sub("", name.strip())
+    normalized = _LEADING_INGREDIENT_UNIT.sub("", normalized)
+    normalized = normalized.strip(" ,.-").casefold()
+    return normalized[:80]
 
 
 def recipe_with_ingredients() -> Select[tuple[Recipe]]:
@@ -176,9 +196,14 @@ def get_filter_values(session: Session) -> RecipeFilterValues:
         select(RecipeIngredient.name, func.count(RecipeIngredient.id).label("uses"))
         .group_by(RecipeIngredient.name)
         .order_by(func.count(RecipeIngredient.id).desc(), RecipeIngredient.name.asc())
-        .limit(50)
+        .limit(500)
     ).all()
-    ingredients = [name for name, _uses in ingredient_rows]
+    ingredient_counts: Counter[str] = Counter()
+    for name, uses in ingredient_rows:
+        normalized = normalize_ingredient_filter(name)
+        if len(normalized) > 1:
+            ingredient_counts[normalized] += uses
+    ingredients = [name for name, _uses in ingredient_counts.most_common(50)]
 
     max_prep = session.scalar(select(func.max(Recipe.prep_minutes)))
     max_cook = session.scalar(select(func.max(Recipe.cook_minutes)))
