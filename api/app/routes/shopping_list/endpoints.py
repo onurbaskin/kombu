@@ -1,7 +1,8 @@
 from typing import Annotated
 
+from api.app.auth import require_permission
 from api.app.database import get_session
-from api.app.models import ShoppingItemStatus
+from api.app.models import ShoppingItemStatus, User
 from api.app.routes.shopping_list.schemas import (
     ShoppingListItemCreate,
     ShoppingListItemRead,
@@ -20,6 +21,7 @@ from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/shopping-list", tags=["shopping-list"])
 SessionDep = Annotated[Session, Depends(get_session)]
+WriteDep = Annotated[User, Depends(require_permission("shopping:write"))]
 
 
 @router.get("", response_model=list[ShoppingListItemRead])
@@ -40,6 +42,7 @@ def index(
 def create(
     payload: ShoppingListItemCreate,
     session: SessionDep,
+    _editor: WriteDep,
 ) -> ShoppingListItemRead:
     """Create a shopping list item."""
     item = create_shopping_item(session, payload)
@@ -51,6 +54,7 @@ def update(
     item_id: int,
     payload: ShoppingListItemUpdate,
     session: SessionDep,
+    _editor: WriteDep,
 ) -> ShoppingListItemRead:
     """Update a shopping list item."""
     item = update_shopping_item(session, item_id, payload)
@@ -66,7 +70,9 @@ def update(
     response_model=ShoppingSuggestionsRead,
     dependencies=[Depends(require_setting("ai.shopping_suggestions"))],
 )
-async def suggestions(session: SessionDep) -> ShoppingSuggestionsRead:
+async def suggestions(
+    session: SessionDep, _editor: WriteDep
+) -> ShoppingSuggestionsRead:
     """Suggest useful items from stock, expiry, recipes, and previous runs."""
     from api.app.services.ai import suggest_shopping_items
 

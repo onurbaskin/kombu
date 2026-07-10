@@ -9,6 +9,8 @@ from api.app.models import (
     InventoryItem,
     ShoppingItemStatus,
     ShoppingListItem,
+    User,
+    UserRole,
 )
 from api.app.services.ai import PhotoInventoryItem, PhotoInventoryResult
 from fastapi.testclient import TestClient
@@ -28,6 +30,15 @@ def _test_session() -> tuple[
     )
     Base.metadata.create_all(engine)
     factory = sessionmaker(bind=engine, autoflush=False, autocommit=False)
+    with factory() as session:
+        session.add(
+            User(
+                email="admin@example.invalid",
+                display_name="Test Administrator",
+                role=UserRole.ADMIN,
+            )
+        )
+        session.commit()
 
     def override() -> Generator[Session, None, None]:
         """Yield a test database session."""
@@ -49,6 +60,31 @@ def test_photo_import_is_rejected_when_capability_is_disabled() -> None:
         assert response.status_code == 403
         with factory() as session:
             assert session.query(InventoryItem).count() == 0
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_viewer_cannot_mutate_inventory() -> None:
+    """Viewer accounts can read kitchen data but cannot add stock."""
+    factory, override = _test_session()
+    with factory() as session:
+        viewer = User(
+            email="viewer@example.invalid",
+            display_name="Test Viewer",
+            role=UserRole.VIEWER,
+        )
+        session.add(viewer)
+        session.commit()
+        viewer_id = viewer.id
+
+    app.dependency_overrides[get_session] = override
+    try:
+        response = TestClient(app).post(
+            "/api/v1/inventory",
+            headers={"X-Kombu-User-Id": str(viewer_id)},
+            json={"name": "Milk", "quantity": 1, "location": "fridge"},
+        )
+        assert response.status_code == 403
     finally:
         app.dependency_overrides.clear()
 

@@ -1,7 +1,8 @@
 from typing import Annotated
 
+from api.app.auth import require_permission
 from api.app.database import get_session
-from api.app.models import InventoryLocation
+from api.app.models import InventoryLocation, User
 from api.app.routes.inventory.schemas import (
     InventoryItemCreate,
     InventoryItemRead,
@@ -18,6 +19,7 @@ from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/inventory", tags=["inventory"])
 SessionDep = Annotated[Session, Depends(get_session)]
+WriteDep = Annotated[User, Depends(require_permission("inventory:write"))]
 
 MAX_PHOTOS = 5
 MAX_PHOTO_BYTES = 8 * 1024 * 1024
@@ -40,6 +42,7 @@ def index(
 def create(
     payload: InventoryItemCreate,
     session: SessionDep,
+    _editor: WriteDep,
 ) -> InventoryItemRead:
     """Create a tracked inventory item."""
     item = create_inventory_item(session, payload)
@@ -55,6 +58,7 @@ def create(
 async def import_photos(
     session: SessionDep,
     photos: Annotated[list[UploadFile], File(description="Inventory photos")],
+    _editor: WriteDep,
 ) -> InventoryPhotoImportRead:
     """Analyze uploaded photos and insert the identified items into inventory."""
     if not photos or len(photos) > MAX_PHOTOS:
