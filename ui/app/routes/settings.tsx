@@ -1,29 +1,18 @@
 import {
-  DatabaseIcon,
   DownloadIcon,
-  FileJsonIcon,
-  KeyIcon,
+  KeyRoundIcon,
   Loader2Icon,
   PencilIcon,
   PlusIcon,
-  ShieldCheckIcon,
-  SparklesIcon,
   Trash2Icon,
+  UserPlusIcon,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRevalidator } from "react-router";
-import { PageHeader } from "~/components/page-header";
 import { SourceNotice } from "~/components/source-notice";
 import { StatusBadge } from "~/components/status-badge";
 import { Badge } from "~/components/ui/badge";
 import { Button } from "~/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "~/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -41,25 +30,16 @@ import {
   FieldTitle,
 } from "~/components/ui/field";
 import { Input } from "~/components/ui/input";
-import { Label } from "~/components/ui/label";
-import { Progress } from "~/components/ui/progress";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
 } from "~/components/ui/select";
 import { Separator } from "~/components/ui/separator";
 import { Switch } from "~/components/ui/switch";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "~/components/ui/table";
 import {
   type AiProviderConfig,
   createAiProvider,
@@ -71,724 +51,677 @@ import {
   getImportJobs,
   getImportSources,
   getKnownProviders,
-  getReadiness,
+  getManagedUsers,
   getSystemOverview,
+  getUserInvites,
+  inviteUser,
+  saveImportCredential,
+  updateAiCapability,
   updateAiProvider,
+  updateFeatureFlag,
+  updateManagedUser,
 } from "~/lib/api/resources";
 import type { Route } from "./+types/settings";
+
+const OPEN_PROVIDER_EVENT = "kombu:settings:add-provider";
+const OPEN_INVITE_EVENT = "kombu:settings:invite-user";
 
 export function meta() {
   return [{ title: "Settings | Kombu" }];
 }
 
+export const handle = {
+  topbar: function SettingsTopbar() {
+    return (
+      <>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => window.dispatchEvent(new Event(OPEN_INVITE_EVENT))}
+        >
+          <UserPlusIcon data-icon="inline-start" />
+          <span className="hidden sm:inline">Invite user</span>
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => window.dispatchEvent(new Event(OPEN_PROVIDER_EVENT))}
+        >
+          <PlusIcon data-icon="inline-start" />
+          <span className="hidden sm:inline">Add provider</span>
+        </Button>
+      </>
+    );
+  },
+};
+
 export async function loader() {
   const [
     overview,
     user,
-    readiness,
     sources,
     jobs,
     aiCapabilities,
     knownProviders,
     aiProviders,
+    users,
+    invites,
   ] = await Promise.all([
     getSystemOverview(),
     getCurrentUser(),
-    getReadiness(),
     getImportSources(),
     getImportJobs(),
     getAiCapabilities(),
     getKnownProviders(),
     getAiProviders(),
+    getManagedUsers(),
+    getUserInvites(),
   ]);
-
   return {
     overview,
     user,
-    readiness,
     sources,
     jobs,
     aiCapabilities,
     knownProviders,
     aiProviders,
+    users,
+    invites,
   };
 }
+
+type Role = "admin" | "editor" | "viewer";
 
 export default function Settings({ loaderData }: Route.ComponentProps) {
   const {
     overview,
     user,
-    readiness,
     sources,
     jobs,
     aiCapabilities,
     knownProviders,
     aiProviders,
+    users,
+    invites,
   } = loaderData;
   const revalidator = useRevalidator();
-
-  const [dialogOpen, setDialogOpen] = useState(false);
+  const isAdmin = user.data.role === "admin";
+  const [providerOpen, setProviderOpen] = useState(false);
   const [editingProvider, setEditingProvider] =
     useState<AiProviderConfig | null>(null);
-  const [formProvider, setFormProvider] = useState("");
-  const [formLabel, setFormLabel] = useState("");
-  const [formApiKey, setFormApiKey] = useState("");
-  const [formBaseUrl, setFormBaseUrl] = useState("");
-  const [formDefaultModel, setFormDefaultModel] = useState("");
-  const [providerError, setProviderError] = useState<string | null>(null);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<number | null>(null);
-  const [isCreatingImport, setIsCreatingImport] = useState(false);
-  const [importError, setImportError] = useState<string | null>(null);
+  const [providerType, setProviderType] = useState("");
+  const [providerLabel, setProviderLabel] = useState("");
+  const [apiKey, setApiKey] = useState("");
+  const [baseUrl, setBaseUrl] = useState("");
+  const [model, setModel] = useState("");
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const [inviteRole, setInviteRole] = useState<Role>("viewer");
+  const [credentialSource, setCredentialSource] = useState<string | null>(null);
+  const [accountName, setAccountName] = useState("");
+  const [secret, setSecret] = useState("");
+  const [busyKey, setBusyKey] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
-  function openAddDialog() {
-    setEditingProvider(null);
-    setFormProvider("");
-    setFormLabel("");
-    setFormApiKey("");
-    setFormBaseUrl("");
-    setFormDefaultModel("");
-    setProviderError(null);
-    setDialogOpen(true);
-  }
-
-  function openEditDialog(provider: AiProviderConfig) {
-    setEditingProvider(provider);
-    setFormProvider(provider.provider);
-    setFormLabel(provider.label);
-    setFormApiKey("");
-    setFormBaseUrl(provider.base_url ?? "");
-    setFormDefaultModel(provider.default_model);
-    setProviderError(null);
-    setDialogOpen(true);
-  }
-
-  function handleProviderTypeChange(value: string) {
-    setFormProvider(value);
-    const known = knownProviders.data.find((p) => p.key === value);
-    if (known && !formLabel) {
-      setFormLabel(known.label);
-    }
-  }
-
-  async function handleSave() {
-    const body = {
-      provider: formProvider,
-      label: formLabel || formProvider,
-      api_key: formApiKey,
-      base_url: formBaseUrl || null,
-      default_model: formDefaultModel,
-      is_enabled: editingProvider ? undefined : true,
-    };
-
-    const result = editingProvider
-      ? await updateAiProvider(editingProvider.id, {
-          label: formLabel || formProvider,
-          default_model: formDefaultModel,
-          base_url: formBaseUrl || null,
-          ...(formApiKey ? { api_key: formApiKey } : {}),
-        })
-      : await createAiProvider(body);
-
-    if (result.error) {
-      setProviderError(result.error);
-      return;
-    }
-
-    setDialogOpen(false);
-    revalidator.revalidate();
-  }
-
-  async function handleToggleEnabled(
-    provider: AiProviderConfig,
-    checked: boolean,
-  ) {
-    await updateAiProvider(provider.id, { is_enabled: checked });
-    revalidator.revalidate();
-  }
-
-  async function handleDelete(id: number) {
-    await deleteAiProvider(id);
-    setDeleteConfirmId(null);
-    revalidator.revalidate();
-  }
-
-  async function handleCreateImport(source: (typeof sources.data)[number]) {
-    setIsCreatingImport(true);
-    setImportError(null);
-
-    const result = await createImportJob({
-      source_name: source.label,
-      source_type: source.source_type,
-    });
-
-    setIsCreatingImport(false);
-    if (result.source === "fallback") {
-      setImportError(result.error ?? "Unable to start the import.");
-      return;
-    }
-
-    revalidator.revalidate();
-  }
+  const openProvider = useCallback((provider?: AiProviderConfig) => {
+    setEditingProvider(provider ?? null);
+    setProviderType(provider?.provider ?? "");
+    setProviderLabel(provider?.label ?? "");
+    setApiKey("");
+    setBaseUrl(provider?.base_url ?? "");
+    setModel(provider?.default_model ?? "");
+    setError(null);
+    setProviderOpen(true);
+  }, []);
 
   useEffect(() => {
-    const hasRunningJobs = jobs.data.some((j) => j.status === "running");
-    if (!hasRunningJobs) return;
-    const interval = setInterval(() => revalidator.revalidate(), 3000);
-    return () => clearInterval(interval);
-  }, [jobs.data, revalidator]);
+    const addProvider = () => openProvider();
+    const invite = () => setInviteOpen(true);
+    window.addEventListener(OPEN_PROVIDER_EVENT, addProvider);
+    window.addEventListener(OPEN_INVITE_EVENT, invite);
+    return () => {
+      window.removeEventListener(OPEN_PROVIDER_EVENT, addProvider);
+      window.removeEventListener(OPEN_INVITE_EVENT, invite);
+    };
+  }, [openProvider]);
+
+  async function saveProvider() {
+    setBusyKey("provider");
+    setError(null);
+    const result = editingProvider
+      ? await updateAiProvider(editingProvider.id, {
+          label: providerLabel,
+          default_model: model,
+          base_url: baseUrl || null,
+          ...(apiKey ? { api_key: apiKey } : {}),
+        })
+      : await createAiProvider({
+          provider: providerType,
+          label: providerLabel,
+          api_key: apiKey,
+          base_url: baseUrl || null,
+          default_model: model,
+        });
+    setBusyKey(null);
+    if (result.error) return setError(result.error);
+    setProviderOpen(false);
+    revalidator.revalidate();
+  }
+
+  async function saveInvite() {
+    setBusyKey("invite");
+    const result = await inviteUser({ email: inviteEmail, role: inviteRole });
+    setBusyKey(null);
+    if (result.error) return setError(result.error);
+    setInviteOpen(false);
+    setInviteEmail("");
+    revalidator.revalidate();
+  }
+
+  async function toggleFeature(key: string, enabled: boolean) {
+    setBusyKey(`feature:${key}`);
+    const result = await updateFeatureFlag(key, enabled);
+    setBusyKey(null);
+    if (result.error) setError(result.error);
+    revalidator.revalidate();
+  }
+
+  async function toggleCapability(key: string, enabled: boolean) {
+    setBusyKey(`capability:${key}`);
+    const result = await updateAiCapability(key, enabled);
+    setBusyKey(null);
+    if (result.error) setError(result.error);
+    revalidator.revalidate();
+  }
+
+  async function saveCredential() {
+    if (!credentialSource) return;
+    setBusyKey("credential");
+    const result = await saveImportCredential(credentialSource, {
+      account_name: accountName,
+      secret,
+    });
+    setBusyKey(null);
+    if (result.error) return setError(result.error);
+    setCredentialSource(null);
+    setSecret("");
+    revalidator.revalidate();
+  }
 
   return (
-    <div className="mx-auto flex w-full max-w-5xl flex-col gap-8">
-      <PageHeader
-        eyebrow="Settings"
-        title="Settings"
-        description="Manage local services, integrations, and feature access."
-      />
+    <div className="mx-auto flex w-full max-w-3xl flex-col gap-6">
+      <SourceNotice results={[overview, user, sources, jobs]} />
+      {error ? (
+        <p className="text-destructive text-sm" role="alert">
+          {error}
+        </p>
+      ) : null}
 
-      <SourceNotice results={[overview, user, readiness, sources, jobs]} />
-
-      <div className="flex flex-col gap-5">
-        <Card>
-          <CardHeader className="px-5 py-4">
-            <CardTitle>Deployment</CardTitle>
-            <CardDescription>Local runtime status.</CardDescription>
-          </CardHeader>
-          <CardContent className="px-5 pb-4">
-            <FieldGroup>
-              <Field orientation="horizontal">
-                <FieldContent>
-                  <FieldTitle>Environment</FieldTitle>
-                </FieldContent>
-                <Badge variant="outline">{overview.data.environment}</Badge>
-              </Field>
-              <Field orientation="horizontal">
-                <FieldContent>
-                  <FieldTitle>Database</FieldTitle>
-                </FieldContent>
-                <StatusBadge value={readiness.data.database} />
-              </Field>
-              <Field orientation="horizontal">
-                <FieldContent>
-                  <FieldTitle>Service</FieldTitle>
-                </FieldContent>
-                <StatusBadge value={readiness.data.status} />
-              </Field>
-            </FieldGroup>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="px-5 py-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <CardTitle>AI Providers</CardTitle>
-                <CardDescription>
-                  Models and credentials used by optional AI tools.
-                </CardDescription>
-              </div>
-              <Button size="sm" onClick={openAddDialog}>
-                <PlusIcon data-icon="inline-start" />
-                Add Provider
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent className="px-5 pb-4">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Provider</TableHead>
-                  <TableHead>Model</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="w-[100px]">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {aiProviders.data.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center">
-                      <span className="text-muted-foreground text-sm">
-                        No AI providers configured yet. Add one to get started.
-                      </span>
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  aiProviders.data.map((provider) => (
-                    <TableRow key={provider.id}>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <SparklesIcon className="size-4 text-muted-foreground" />
-                          <div className="flex flex-col">
-                            <span className="font-medium text-sm">
-                              {provider.label}
-                            </span>
-                            <span className="text-muted-foreground text-xs">
-                              {provider.provider}
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <code className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
-                          {provider.default_model}
-                        </code>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">
-                          <Switch
-                            checked={provider.is_enabled}
-                            onCheckedChange={(checked) =>
-                              handleToggleEnabled(provider, checked)
-                            }
-                            aria-label={`Toggle ${provider.label}`}
-                          />
-                          <span className="text-muted-foreground text-xs">
-                            {provider.is_enabled ? "Enabled" : "Disabled"}
-                          </span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => openEditDialog(provider)}
-                            aria-label={`Edit ${provider.label}`}
-                          >
-                            <PencilIcon />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon-sm"
-                            onClick={() => setDeleteConfirmId(provider.id)}
-                            aria-label={`Delete ${provider.label}`}
-                          >
-                            <Trash2Icon />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-
-            {aiProviders.data.length > 0 && (
-              <div className="mt-4 rounded-md border bg-muted/30 p-3">
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  API keys are stored encrypted via the application secret. The
-                  <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
-                    {" "}
-                    KOMBU_ENCRYPTION_KEY
-                  </code>{" "}
-                  environment variable is used as the encryption key.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="px-5 py-4">
-            <CardTitle>User management</CardTitle>
-            <CardDescription>
-              Current local identity and sign-in controls.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="px-5 pb-4">
-            <div className="mb-3 flex items-center gap-3">
-              <ShieldCheckIcon aria-hidden="true" />
-              <div>
-                <p className="font-medium">{user.data.display_name}</p>
-                <p className="text-muted-foreground text-sm">
-                  {user.data.email} via {user.data.auth_provider}
-                </p>
-              </div>
-              <Badge className="ml-auto">{user.data.role}</Badge>
-            </div>
-            <FieldGroup>
-              <Field orientation="horizontal" data-disabled>
-                <FieldContent>
-                  <FieldTitle>Allow local accounts</FieldTitle>
-                  <FieldDescription>
-                    Useful for first boot before SSO is configured.
-                  </FieldDescription>
-                </FieldContent>
-                <Switch checked aria-label="Allow local accounts" disabled />
-              </Field>
-              <Field orientation="horizontal" data-disabled>
-                <FieldContent>
-                  <FieldTitle>Require SSO</FieldTitle>
-                  <FieldDescription>
-                    Planned for multi-user and company deployments.
-                  </FieldDescription>
-                </FieldContent>
-                <Switch aria-label="Require SSO" disabled />
-              </Field>
-            </FieldGroup>
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card>
-        <CardHeader className="px-5 py-4">
-          <CardTitle>Feature flags</CardTitle>
-          <CardDescription>
-            Availability of optional Kombu features.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-5 pb-4">
-          <FieldGroup>
-            {overview.data.features.map((feature) => (
-              <Field key={feature.key} orientation="horizontal" data-disabled>
-                <FieldContent>
-                  <FieldLabel>{feature.label}</FieldLabel>
-                  <FieldDescription>{feature.description}</FieldDescription>
-                </FieldContent>
-                <Switch
-                  checked={feature.enabled}
-                  aria-label={feature.label}
-                  disabled
-                />
-              </Field>
-            ))}
-          </FieldGroup>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="px-5 py-4">
-          <CardTitle>AI Capabilities</CardTitle>
-          <CardDescription>
-            Features currently available to configured providers.
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="px-5 pb-4">
-          <FieldGroup>
-            {aiCapabilities.data.map((capability) => (
-              <Field
-                key={capability.key}
-                orientation="horizontal"
-                data-disabled
-              >
-                <FieldContent>
-                  <FieldTitle>{capability.label}</FieldTitle>
-                  <FieldDescription>{capability.description}</FieldDescription>
-                </FieldContent>
-                <StatusBadge
-                  value={capability.enabled ? "enabled" : "planned"}
-                />
-              </Field>
-            ))}
-          </FieldGroup>
-        </CardContent>
-      </Card>
-
-      <Card>
-        <CardHeader className="px-5 py-4">
-          <CardTitle>Recipe Sources</CardTitle>
-          <CardDescription>Downloadable recipe data sources.</CardDescription>
-        </CardHeader>
-        <CardContent className="px-5 pb-4">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Source</TableHead>
-                <TableHead className="hidden sm:table-cell">
-                  Description
-                </TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {sources.data.map((source) => {
-                const isKaggle = source.key === "kaggle-recipes";
-                const isReady = source.ready_for_import;
-
-                let statusLabel = "Planned";
-
-                if (isReady) {
-                  statusLabel = "Ready";
-                } else if (isKaggle) {
-                  statusLabel = "Requires API Key";
+      <SettingsSection
+        title="AI providers"
+        description="Models and encrypted credentials used by optional AI tools."
+      >
+        {aiProviders.data.length ? (
+          aiProviders.data.map((provider) => (
+            <SettingsRow
+              key={provider.id}
+              title={provider.label}
+              description={`${provider.provider} · ${provider.default_model}`}
+            >
+              <Switch
+                checked={provider.is_enabled}
+                onCheckedChange={(enabled) =>
+                  void updateAiProvider(provider.id, {
+                    is_enabled: enabled,
+                  }).then(() => revalidator.revalidate())
                 }
+                disabled={!isAdmin}
+                aria-label={`Enable ${provider.label}`}
+              />
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                onClick={() => openProvider(provider)}
+                aria-label={`Edit ${provider.label}`}
+              >
+                <PencilIcon />
+              </Button>
+              <Button
+                size="icon-sm"
+                variant="ghost"
+                onClick={() =>
+                  void deleteAiProvider(provider.id).then(() =>
+                    revalidator.revalidate(),
+                  )
+                }
+                aria-label={`Delete ${provider.label}`}
+              >
+                <Trash2Icon />
+              </Button>
+            </SettingsRow>
+          ))
+        ) : (
+          <SettingsRow
+            title="No provider configured"
+            description="Add a provider to enable AI capabilities."
+          >
+            <Button size="sm" variant="outline" onClick={() => openProvider()}>
+              Add provider
+            </Button>
+          </SettingsRow>
+        )}
+      </SettingsSection>
 
-                return (
-                  <TableRow key={source.key}>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        {isKaggle ? (
-                          <DatabaseIcon className="size-4 text-muted-foreground" />
-                        ) : (
-                          <FileJsonIcon className="size-4 text-muted-foreground" />
-                        )}
-                        <div className="flex flex-col">
-                          <span className="font-medium text-sm">
-                            {source.label}
-                          </span>
-                          <span className="text-muted-foreground text-xs">
-                            {source.key}
-                          </span>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      <span className="text-muted-foreground text-sm">
-                        {source.description}
-                      </span>
-                    </TableCell>
-                    <TableCell>
-                      <StatusBadge value={statusLabel} />
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {isKaggle && !isReady ? (
-                        <Button variant="outline" size="sm" asChild>
-                          <a
-                            href="https://www.kaggle.com/settings"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            <KeyIcon data-icon="inline-start" />
-                            Configure Kaggle
-                          </a>
-                        </Button>
-                      ) : isReady ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          disabled={isCreatingImport}
-                          onClick={() => void handleCreateImport(source)}
-                        >
-                          {isCreatingImport ? (
-                            <Loader2Icon
-                              className="animate-spin"
-                              data-icon="inline-start"
-                            />
-                          ) : (
-                            <DownloadIcon data-icon="inline-start" />
-                          )}
-                          {isCreatingImport ? "Starting…" : "Download"}
-                        </Button>
-                      ) : (
-                        <Button variant="outline" size="sm" disabled>
-                          <PlusIcon data-icon="inline-start" />
-                          Coming soon
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+      <SettingsSection
+        title="Feature access"
+        description="Deployment-wide controls enforced by the API."
+      >
+        {overview.data.features.map((feature) => (
+          <SettingsRow
+            key={feature.key}
+            title={feature.label}
+            description={feature.description}
+          >
+            <Switch
+              checked={feature.enabled}
+              disabled={!isAdmin || busyKey === `feature:${feature.key}`}
+              onCheckedChange={(enabled) =>
+                void toggleFeature(feature.key, enabled)
+              }
+              aria-label={`Enable ${feature.label}`}
+            />
+          </SettingsRow>
+        ))}
+      </SettingsSection>
 
-          {importError && (
-            <p className="mt-3 text-destructive text-sm" role="alert">
-              {importError}
-            </p>
-          )}
+      <SettingsSection
+        title="AI capabilities"
+        description="Choose which AI actions appear and can run."
+      >
+        {aiCapabilities.data.map((capability) => (
+          <SettingsRow
+            key={capability.key}
+            title={capability.label}
+            description={capability.description}
+          >
+            <Switch
+              checked={capability.enabled}
+              disabled={
+                !isAdmin ||
+                !overview.data.features.find((item) => item.key === "ai")
+                  ?.enabled ||
+                busyKey === `capability:${capability.key}`
+              }
+              onCheckedChange={(enabled) =>
+                void toggleCapability(capability.key, enabled)
+              }
+              aria-label={`Enable ${capability.label}`}
+            />
+          </SettingsRow>
+        ))}
+      </SettingsSection>
 
-          {jobs.data.length > 0 && (
-            <>
-              <Separator className="my-4" />
-              <div className="flex flex-col gap-3">
-                <h4 className="font-semibold text-sm">Import Jobs</h4>
-                {jobs.data.map((job) => {
-                  const progress =
-                    job.total_records > 0
-                      ? Math.round(
-                          (job.imported_records / job.total_records) * 100,
-                        )
-                      : 0;
+      {isAdmin ? (
+        <SettingsSection
+          title="User management"
+          description="Invite people and control what they can change."
+        >
+          {users.data.map((managedUser) => (
+            <SettingsRow
+              key={managedUser.id}
+              title={managedUser.display_name}
+              description={managedUser.email}
+            >
+              <Select
+                value={managedUser.role}
+                onValueChange={(role: Role) =>
+                  void updateManagedUser(managedUser.id, { role }).then(() =>
+                    revalidator.revalidate(),
+                  )
+                }
+              >
+                <SelectTrigger
+                  className="w-28"
+                  aria-label={`Role for ${managedUser.display_name}`}
+                >
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    {["admin", "editor", "viewer"].map((role) => (
+                      <SelectItem key={role} value={role}>
+                        {role}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Switch
+                checked={managedUser.is_active}
+                onCheckedChange={(is_active) =>
+                  void updateManagedUser(managedUser.id, { is_active }).then(
+                    () => revalidator.revalidate(),
+                  )
+                }
+                aria-label={`Active ${managedUser.display_name}`}
+              />
+            </SettingsRow>
+          ))}
+          {invites.data.map((invite) => (
+            <SettingsRow
+              key={`invite-${invite.id}`}
+              title={invite.email}
+              description="Invitation pending"
+            >
+              <Badge variant="secondary">{invite.role}</Badge>
+            </SettingsRow>
+          ))}
+        </SettingsSection>
+      ) : null}
 
-                  return (
-                    <div
-                      key={job.id}
-                      className="flex flex-col gap-2 rounded-md border p-3"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          {job.status === "running" && (
-                            <Loader2Icon className="size-4 animate-spin text-muted-foreground" />
-                          )}
-                          <div>
-                            <p className="font-medium text-sm">
-                              {job.source_name}
-                            </p>
-                            <p className="text-muted-foreground text-xs">
-                              {job.imported_records.toLocaleString()}
-                              {" / "}
-                              {job.total_records > 0
-                                ? job.total_records.toLocaleString()
-                                : "—"}{" "}
-                              recipes
-                            </p>
-                          </div>
-                        </div>
-                        <StatusBadge value={job.status} />
-                      </div>
-                      {job.status === "running" && (
-                        <Progress value={progress} className="h-2" />
-                      )}
-                      {job.status === "failed" && job.error_message && (
-                        <p className="text-destructive text-xs">
-                          {job.error_message}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </>
-          )}
+      <SettingsSection
+        title="Recipe sources"
+        description="Sources are maintained by Kombu; credentials remain encrypted on this instance."
+      >
+        {sources.data.map((source) => (
+          <SettingsRow
+            key={source.key}
+            title={source.label}
+            description={source.description}
+          >
+            <StatusBadge
+              value={source.ready_for_import ? "ready" : "credentials required"}
+            />
+            {!source.ready_for_import && source.key === "kaggle-recipes" ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  setCredentialSource(source.key);
+                  setError(null);
+                }}
+              >
+                <KeyRoundIcon data-icon="inline-start" /> Configure
+              </Button>
+            ) : source.ready_for_import ? (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() =>
+                  void createImportJob({
+                    source_name: source.label,
+                    source_type: source.source_type,
+                  }).then(() => revalidator.revalidate())
+                }
+              >
+                <DownloadIcon data-icon="inline-start" /> Import
+              </Button>
+            ) : null}
+          </SettingsRow>
+        ))}
+        {jobs.data.slice(0, 3).map((job) => (
+          <SettingsRow
+            key={`job-${job.id}`}
+            title={job.source_name}
+            description={`${job.imported_records.toLocaleString()} of ${job.total_records.toLocaleString()} recipes`}
+          >
+            {job.status === "running" ? (
+              <Loader2Icon
+                className="animate-spin"
+                aria-label="Import running"
+              />
+            ) : (
+              <StatusBadge value={job.status} />
+            )}
+          </SettingsRow>
+        ))}
+      </SettingsSection>
 
-          <div className="mt-4 rounded-md border bg-muted/30 p-3">
-            <p className="text-muted-foreground text-xs leading-relaxed">
-              Kaggle API credentials are configured via the{" "}
-              <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
-                KAGGLE_USERNAME
-              </code>{" "}
-              and{" "}
-              <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
-                KAGGLE_KEY
-              </code>{" "}
-              environment variables (see{" "}
-              <code className="rounded bg-muted px-1 py-0.5 font-mono text-xs">
-                .env.example
-              </code>
-              ). Once set, the Kaggle source will show as Ready and you can
-              download the 2M+ recipe dataset.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+      <Dialog open={providerOpen} onOpenChange={setProviderOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              {editingProvider ? "Edit Provider" : "Add AI Provider"}
+              {editingProvider ? "Edit provider" : "Add provider"}
             </DialogTitle>
             <DialogDescription>
-              Configure an AI provider for LiteLLM. API keys are encrypted at
-              rest.
+              Credentials are encrypted using KOMBU_ENCRYPTION_KEY before
+              storage.
             </DialogDescription>
           </DialogHeader>
-          <div className="flex flex-col gap-4">
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="provider-type">Provider Type</Label>
+          <FieldGroup>
+            <Field>
+              <FieldLabel>Provider</FieldLabel>
               <Select
-                value={formProvider}
-                onValueChange={handleProviderTypeChange}
-                disabled={!!editingProvider}
+                value={providerType}
+                onValueChange={(value) => {
+                  setProviderType(value);
+                  const known = knownProviders.data.find(
+                    (item) => item.key === value,
+                  );
+                  if (known) setProviderLabel(known.label);
+                }}
+                disabled={Boolean(editingProvider)}
               >
-                <SelectTrigger id="provider-type" className="w-full">
-                  <SelectValue placeholder="Select a provider..." />
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Select provider" />
                 </SelectTrigger>
                 <SelectContent>
-                  {knownProviders.data.map((p) => (
-                    <SelectItem key={p.key} value={p.key}>
-                      {p.label}
-                    </SelectItem>
-                  ))}
+                  <SelectGroup>
+                    {knownProviders.data.map((provider) => (
+                      <SelectItem key={provider.key} value={provider.key}>
+                        {provider.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
                 </SelectContent>
               </Select>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="provider-label">Label</Label>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="provider-label">Label</FieldLabel>
               <Input
                 id="provider-label"
-                value={formLabel}
-                onChange={(e) => setFormLabel(e.target.value)}
-                placeholder="My OpenAI Account"
+                value={providerLabel}
+                onChange={(event) => setProviderLabel(event.target.value)}
               />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="provider-api-key">API Key</Label>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="provider-key">API key</FieldLabel>
               <Input
-                id="provider-api-key"
+                id="provider-key"
                 type="password"
-                value={formApiKey}
-                onChange={(e) => setFormApiKey(e.target.value)}
+                value={apiKey}
+                onChange={(event) => setApiKey(event.target.value)}
                 placeholder={
-                  editingProvider ? "Leave blank to keep current" : "sk-..."
+                  editingProvider ? "Leave blank to keep current" : "Required"
                 }
               />
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="provider-base-url">Base URL (optional)</Label>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="provider-model">Default model</FieldLabel>
               <Input
-                id="provider-base-url"
-                value={formBaseUrl}
-                onChange={(e) => setFormBaseUrl(e.target.value)}
-                placeholder="https://api.openai.com/v1"
+                id="provider-model"
+                value={model}
+                onChange={(event) => setModel(event.target.value)}
               />
-              <p className="text-muted-foreground text-xs">
-                Custom endpoint for proxies like OpenRouter or LiteLLM.
-              </p>
-            </div>
-            <div className="flex flex-col gap-2">
-              <Label htmlFor="provider-default-model">Default Model</Label>
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="provider-url">Base URL</FieldLabel>
               <Input
-                id="provider-default-model"
-                value={formDefaultModel}
-                onChange={(e) => setFormDefaultModel(e.target.value)}
-                placeholder="gpt-4o-mini"
+                id="provider-url"
+                value={baseUrl}
+                onChange={(event) => setBaseUrl(event.target.value)}
+                placeholder="Optional"
               />
-            </div>
-            {providerError && (
-              <p className="text-destructive text-sm" role="alert">
-                {providerError}
-              </p>
-            )}
-          </div>
+            </Field>
+          </FieldGroup>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDialogOpen(false)}>
+            <Button variant="outline" onClick={() => setProviderOpen(false)}>
               Cancel
             </Button>
             <Button
-              onClick={handleSave}
+              onClick={() => void saveProvider()}
               disabled={
-                !formProvider ||
-                !formDefaultModel ||
-                (!editingProvider && !formApiKey)
+                busyKey === "provider" ||
+                !providerType ||
+                !model ||
+                (!editingProvider && !apiKey)
               }
             >
-              {editingProvider ? "Save Changes" : "Add Provider"}
+              Save provider
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={inviteOpen} onOpenChange={setInviteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Invite user</DialogTitle>
+            <DialogDescription>
+              Editors manage kitchen data. Viewers have read-only access.
+            </DialogDescription>
+          </DialogHeader>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="invite-email">Email</FieldLabel>
+              <Input
+                id="invite-email"
+                type="email"
+                value={inviteEmail}
+                onChange={(event) => setInviteEmail(event.target.value)}
+              />
+            </Field>
+            <Field>
+              <FieldLabel>Role</FieldLabel>
+              <Select
+                value={inviteRole}
+                onValueChange={(role: Role) => setInviteRole(role)}
+              >
+                <SelectTrigger className="w-full">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup>
+                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="editor">Editor</SelectItem>
+                    <SelectItem value="viewer">Viewer</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+          </FieldGroup>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setInviteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => void saveInvite()}
+              disabled={!inviteEmail || busyKey === "invite"}
+            >
+              Send invite
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
       <Dialog
-        open={deleteConfirmId !== null}
-        onOpenChange={(open) => {
-          if (!open) setDeleteConfirmId(null);
-        }}
+        open={credentialSource !== null}
+        onOpenChange={(open) => !open && setCredentialSource(null)}
       >
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Delete Provider</DialogTitle>
+            <DialogTitle>Configure recipe source</DialogTitle>
             <DialogDescription>
-              Are you sure you want to remove this provider? Any features using
-              it will stop working until another provider is configured.
+              The secret is encrypted before it is saved to SQLite.
             </DialogDescription>
           </DialogHeader>
+          <FieldGroup>
+            <Field>
+              <FieldLabel htmlFor="source-account">Account name</FieldLabel>
+              <Input
+                id="source-account"
+                value={accountName}
+                onChange={(event) => setAccountName(event.target.value)}
+              />
+            </Field>
+            <Field>
+              <FieldLabel htmlFor="source-secret">API secret</FieldLabel>
+              <Input
+                id="source-secret"
+                type="password"
+                value={secret}
+                onChange={(event) => setSecret(event.target.value)}
+              />
+            </Field>
+          </FieldGroup>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteConfirmId(null)}>
+            <Button variant="outline" onClick={() => setCredentialSource(null)}>
               Cancel
             </Button>
             <Button
-              variant="destructive"
-              onClick={() =>
-                deleteConfirmId !== null && handleDelete(deleteConfirmId)
-              }
+              onClick={() => void saveCredential()}
+              disabled={!accountName || !secret || busyKey === "credential"}
             >
-              Delete
+              Save credentials
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+function SettingsSection({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section
+      aria-labelledby={`settings-${title.toLowerCase().replaceAll(" ", "-")}`}
+    >
+      <div className="mb-2 px-1">
+        <h2
+          id={`settings-${title.toLowerCase().replaceAll(" ", "-")}`}
+          className="font-semibold text-sm text-balance"
+        >
+          {title}
+        </h2>
+        <p className="text-muted-foreground text-sm text-pretty">
+          {description}
+        </p>
+      </div>
+      <div className="overflow-hidden rounded-lg border bg-card">
+        {children}
+      </div>
+    </section>
+  );
+}
+
+function SettingsRow({
+  title,
+  description,
+  children,
+}: {
+  title: string;
+  description: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <>
+      <Field orientation="horizontal" className="min-h-16 px-4 py-3">
+        <FieldContent>
+          <FieldTitle>{title}</FieldTitle>
+          <FieldDescription className="line-clamp-2">
+            {description}
+          </FieldDescription>
+        </FieldContent>
+        <div className="flex shrink-0 items-center gap-2">{children}</div>
+      </Field>
+      <Separator className="last:hidden" />
+    </>
   );
 }

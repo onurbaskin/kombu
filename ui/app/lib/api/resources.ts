@@ -158,7 +158,7 @@ const fallbackUser: CurrentUser = {
   id: 1,
   email: "admin@example.invalid",
   display_name: "Local Administrator",
-  role: "owner",
+  role: "admin",
   auth_provider: "local",
   permissions: [
     "recipes:write",
@@ -166,7 +166,8 @@ const fallbackUser: CurrentUser = {
     "shopping:write",
     "imports:write",
     "scanner:write",
-    "settings:read",
+    "settings:manage",
+    "users:manage",
   ],
 };
 
