@@ -66,8 +66,6 @@ def build_navigation() -> list[NavigationItem]:
         NavigationItem(label="Inventory", href="/inventory", section="stock"),
         NavigationItem(label="Shopping", href="/shopping", section="stock"),
         NavigationItem(label="Scanner", href="/scanner", section="capture"),
-        NavigationItem(label="Imports", href="/imports", section="capture"),
-        NavigationItem(label="AI Lab", href="/ai", section="smart"),
         NavigationItem(label="Settings", href="/settings", section="admin"),
     ]
 

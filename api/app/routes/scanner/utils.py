@@ -23,22 +23,6 @@ def list_scanner_capabilities() -> list[ScannerCapabilityRead]:
             ),
             requires_hardware=False,
         ),
-        ScannerCapabilityRead(
-            key="receipt",
-            label="Receipt parsing",
-            description=(
-                "Receipt capture session ready for future OCR and inventory extraction."
-            ),
-            requires_hardware=False,
-        ),
-        ScannerCapabilityRead(
-            key="dedicated-scanner",
-            label="Dedicated scanner",
-            description=(
-                "External scanner workflow for self-hosters with kitchen hardware."
-            ),
-            requires_hardware=True,
-        ),
     ]
 
 
