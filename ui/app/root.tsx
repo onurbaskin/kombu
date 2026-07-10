@@ -1,5 +1,6 @@
 import {
   BoxesIcon,
+  CalendarDaysIcon,
   HomeIcon,
   ListChecksIcon,
   MenuIcon,
@@ -46,6 +47,7 @@ const navigation = [
   { label: "Recipes", href: "/recipes", icon: SoupIcon },
   { label: "Inventory", href: "/inventory", icon: BoxesIcon },
   { label: "Shopping", href: "/shopping", icon: ListChecksIcon },
+  { label: "Meal planner", href: "/meal-planner", icon: CalendarDaysIcon },
   { label: "Scanner", href: "/scanner", icon: ScanLineIcon },
   { label: "Settings", href: "/settings", icon: SettingsIcon },
 ];

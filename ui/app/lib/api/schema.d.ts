@@ -44,26 +44,6 @@ export interface paths {
     patch: operations["update_capability_api_v1_ai_capabilities__key__patch"];
     trace?: never;
   };
-  "/api/v1/ai/inventory/analyze-photos": {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    get?: never;
-    put?: never;
-    /**
-     * Analyze Photos
-     * @description Analyze food photos to identify inventory items.
-     */
-    post: operations["analyze_photos_api_v1_ai_inventory_analyze_photos_post"];
-    delete?: never;
-    options?: never;
-    head?: never;
-    patch?: never;
-    trace?: never;
-  };
   "/api/v1/ai/providers": {
     parameters: {
       query?: never;
@@ -247,7 +227,7 @@ export interface paths {
     put?: never;
     /**
      * Create Job
-     * @description Create an import job and execute it in the background.
+     * @description Create a durable import job for the Kombu worker.
      */
     post: operations["create_job_api_v1_imports_jobs_post"];
     delete?: never;
@@ -344,6 +324,70 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/meal-plans": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * List Occurrences
+     * @description List scheduled meal occurrences in a calendar window.
+     */
+    get: operations["list_occurrences_api_v1_meal_plans_get"];
+    put?: never;
+    /**
+     * Create
+     * @description Schedule a recipe and return its materialized recurrence series.
+     */
+    post: operations["create_api_v1_meal_plans_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/meal-plans/occurrences/{occurrence_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Remove Occurrence
+     * @description Delete one occurrence while leaving the rest of its series intact.
+     */
+    delete: operations["remove_occurrence_api_v1_meal_plans_occurrences__occurrence_id__delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/meal-plans/{series_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    post?: never;
+    /**
+     * Remove Series
+     * @description Delete a complete meal plan series and all of its occurrences.
+     */
+    delete: operations["remove_series_api_v1_meal_plans__series_id__delete"];
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/recipes": {
     parameters: {
       query?: never;
@@ -422,10 +466,18 @@ export interface paths {
     get: operations["show_api_v1_recipes__recipe_id__get"];
     put?: never;
     post?: never;
-    delete?: never;
+    /**
+     * Remove
+     * @description Delete a recipe and its child rows.
+     */
+    delete: operations["remove_api_v1_recipes__recipe_id__delete"];
     options?: never;
     head?: never;
-    patch?: never;
+    /**
+     * Update
+     * @description Update a recipe and optionally replace its ingredient lines.
+     */
+    patch: operations["update_api_v1_recipes__recipe_id__patch"];
     trace?: never;
   };
   "/api/v1/recipes/{recipe_id}/enhancement": {
@@ -446,6 +498,26 @@ export interface paths {
      * @description Generate or reuse a cached, structured recipe enhancement.
      */
     post: operations["enhance_stored_recipe_api_v1_recipes__recipe_id__enhancement_post"];
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/recipes/{recipe_id}/images": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    get?: never;
+    put?: never;
+    /**
+     * Generate Image
+     * @description Generate and cache a recipe image using the configured image provider.
+     */
+    post: operations["generate_image_api_v1_recipes__recipe_id__images_post"];
     delete?: never;
     options?: never;
     head?: never;
@@ -490,6 +562,54 @@ export interface paths {
     options?: never;
     head?: never;
     patch?: never;
+    trace?: never;
+  };
+  "/api/v1/recipes/{recipe_id}/versions": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Versions
+     * @description List the original recipe and all editable generated snapshots.
+     */
+    get: operations["versions_api_v1_recipes__recipe_id__versions_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
+  "/api/v1/recipes/{recipe_id}/versions/{version_id}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Show Version
+     * @description Return one stored recipe snapshot.
+     */
+    get: operations["show_version_api_v1_recipes__recipe_id__versions__version_id__get"];
+    put?: never;
+    post?: never;
+    /**
+     * Delete Version
+     * @description Delete one generated recipe snapshot.
+     */
+    delete: operations["delete_version_api_v1_recipes__recipe_id__versions__version_id__delete"];
+    options?: never;
+    head?: never;
+    /**
+     * Update Version
+     * @description Edit a generated recipe snapshot.
+     */
+    patch: operations["update_version_api_v1_recipes__recipe_id__versions__version_id__patch"];
     trace?: never;
   };
   "/api/v1/scanner/capabilities": {
@@ -560,6 +680,26 @@ export interface paths {
     patch?: never;
     trace?: never;
   };
+  "/api/v1/shopping-list/planned": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Planned
+     * @description Return ingredient demand created by scheduled meals.
+     */
+    get: operations["planned_api_v1_shopping_list_planned_get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
+    trace?: never;
+  };
   "/api/v1/shopping-list/suggestions": {
     parameters: {
       query?: never;
@@ -590,7 +730,11 @@ export interface paths {
     get?: never;
     put?: never;
     post?: never;
-    delete?: never;
+    /**
+     * Remove
+     * @description Delete a shopping list item.
+     */
+    delete: operations["remove_api_v1_shopping_list__item_id__delete"];
     options?: never;
     head?: never;
     /**
@@ -782,6 +926,26 @@ export interface paths {
      * @description Update a user's role or active status.
      */
     patch: operations["update_user_api_v1_users__user_id__patch"];
+    trace?: never;
+  };
+  "/blobs/{blob_key}": {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    /**
+     * Get Blob
+     * @description Serve an application-owned blob from the configured storage backend.
+     */
+    get: operations["get_blob_blobs__blob_key__get"];
+    put?: never;
+    post?: never;
+    delete?: never;
+    options?: never;
+    head?: never;
+    patch?: never;
     trace?: never;
   };
   "/healthz": {
@@ -1209,6 +1373,103 @@ export interface components {
       label: string;
     };
     /**
+     * MealPlanCreate
+     * @description Request to schedule a recipe once or as a recurring series.
+     */
+    MealPlanCreate: {
+      /**
+       * Duration Minutes
+       * @default 30
+       */
+      duration_minutes: number;
+      /** Recipe Id */
+      recipe_id: number;
+      /** Repeat Count */
+      repeat_count?: number | null;
+      /**
+       * Repeat Frequency
+       * @default once
+       * @enum {string}
+       */
+      repeat_frequency: "once" | "daily" | "weekly" | "monthly";
+      /**
+       * Repeat Interval
+       * @default 1
+       */
+      repeat_interval: number;
+      /** Repeat Until */
+      repeat_until?: string | null;
+      /**
+       * Start Date
+       * Format: date
+       */
+      start_date: string;
+      /**
+       * Start Time
+       * @default 18:00
+       */
+      start_time: string;
+    };
+    /**
+     * MealPlanOccurrenceRead
+     * @description One scheduled meal occurrence with its recipe context.
+     */
+    MealPlanOccurrenceRead: {
+      /** Duration Minutes */
+      duration_minutes: number;
+      /** Id */
+      id: number;
+      /**
+       * Occurrence Date
+       * Format: date
+       */
+      occurrence_date: string;
+      /** Recipe Id */
+      recipe_id: number;
+      /** Recipe Image Url */
+      recipe_image_url: string | null;
+      /** Recipe Title */
+      recipe_title: string;
+      /** Repeat Count */
+      repeat_count: number | null;
+      /**
+       * Repeat Frequency
+       * @enum {string}
+       */
+      repeat_frequency: "once" | "daily" | "weekly" | "monthly";
+      /** Repeat Interval */
+      repeat_interval: number;
+      /** Repeat Until */
+      repeat_until: string | null;
+      /** Series Id */
+      series_id: number;
+      /** Start Time */
+      start_time: string;
+    };
+    /**
+     * MealPlanSeriesRead
+     * @description Created series summary returned after scheduling a recipe.
+     */
+    MealPlanSeriesRead: {
+      /** Id */
+      id: number;
+      /** Occurrences */
+      occurrences: components["schemas"]["MealPlanOccurrenceRead"][];
+      /** Recipe Id */
+      recipe_id: number;
+      /** Repeat Count */
+      repeat_count: number | null;
+      /**
+       * Repeat Frequency
+       * @enum {string}
+       */
+      repeat_frequency: "once" | "daily" | "weekly" | "monthly";
+      /** Repeat Interval */
+      repeat_interval: number;
+      /** Repeat Until */
+      repeat_until: string | null;
+    };
+    /**
      * NavigationItem
      * @description Frontend navigation item provided by the API.
      */
@@ -1234,10 +1495,31 @@ export interface components {
       /** Value */
       value: number;
     };
-    /** PhotoAnalysisRequest */
-    PhotoAnalysisRequest: {
-      /** Image Paths */
-      image_paths?: string[];
+    /**
+     * PlannedShoppingItemRead
+     * @description Aggregated ingredient demand created by scheduled meals.
+     */
+    PlannedShoppingItemRead: {
+      /**
+       * Already Needed
+       * @default false
+       */
+      already_needed: boolean;
+      /**
+       * First Needed On
+       * Format: date
+       */
+      first_needed_on: string;
+      /** Name */
+      name: string;
+      /** Occurrence Count */
+      occurrence_count: number;
+      /** Quantity */
+      quantity: number;
+      /** Recipe Titles */
+      recipe_titles: string[];
+      /** Unit */
+      unit: string | null;
     };
     /**
      * ReadinessRead
@@ -1313,6 +1595,8 @@ export interface components {
       tips?: string[];
       /** Title */
       title: string;
+      /** Version Id */
+      version_id?: number | null;
     };
     /**
      * RecipeFilterValues
@@ -1329,6 +1613,35 @@ export interface components {
       max_prep_minutes?: number | null;
       /** Source Types */
       source_types: string[];
+    };
+    /**
+     * RecipeImageGenerateRequest
+     * @description Optional custom prompt for a generated recipe image.
+     */
+    RecipeImageGenerateRequest: {
+      /** Prompt */
+      prompt?: string | null;
+    };
+    /**
+     * RecipeImageRead
+     * @description Cached generated image for a recipe.
+     */
+    RecipeImageRead: {
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Id */
+      id: number;
+      /** Image Url */
+      image_url: string;
+      /** Model */
+      model: string;
+      /** Prompt */
+      prompt: string;
+      /** Provider */
+      provider: string;
     };
     /** RecipeImportUrlRequest */
     RecipeImportUrlRequest: {
@@ -1399,6 +1712,8 @@ export interface components {
       id: number;
       /** Image Url */
       image_url: string | null;
+      /** Images */
+      images?: components["schemas"]["RecipeImageRead"][];
       /** Ingredients */
       ingredients: components["schemas"]["RecipeIngredientRead"][];
       /** Instructions */
@@ -1440,6 +1755,99 @@ export interface components {
      * @enum {string}
      */
     RecipeSourceType: "user" | "import" | "web" | "ai";
+    /**
+     * RecipeUpdate
+     * @description Partial recipe update request.
+     */
+    RecipeUpdate: {
+      /** Cook Minutes */
+      cook_minutes?: number | null;
+      /** Cuisine */
+      cuisine?: string | null;
+      /** Image Url */
+      image_url?: string | null;
+      /** Ingredients */
+      ingredients?: components["schemas"]["RecipeIngredientCreate"][] | null;
+      /** Instructions */
+      instructions?: string | null;
+      /** Is Favorite */
+      is_favorite?: boolean | null;
+      /** Prep Minutes */
+      prep_minutes?: number | null;
+      source_type?: components["schemas"]["RecipeSourceType"] | null;
+      /** Source Url */
+      source_url?: string | null;
+      /** Summary */
+      summary?: string | null;
+      /** Title */
+      title?: string | null;
+      /** Yield Servings */
+      yield_servings?: number | null;
+    };
+    /**
+     * RecipeVersionRead
+     * @description A complete recipe snapshot, including the virtual original version.
+     */
+    RecipeVersionRead: {
+      /** Cook Minutes */
+      cook_minutes: number | null;
+      /**
+       * Created At
+       * Format: date-time
+       */
+      created_at: string;
+      /** Cuisine */
+      cuisine: string | null;
+      /** Id */
+      id: number;
+      /** Image Url */
+      image_url: string | null;
+      /** Ingredients */
+      ingredients?: components["schemas"]["RecipeIngredientCreate"][];
+      /** Instructions */
+      instructions: string | null;
+      /** Prep Minutes */
+      prep_minutes: number | null;
+      /** Recipe Id */
+      recipe_id: number;
+      /** Summary */
+      summary: string | null;
+      /** Title */
+      title: string;
+      /**
+       * Updated At
+       * Format: date-time
+       */
+      updated_at: string;
+      /** Version Type */
+      version_type: string;
+      /** Yield Servings */
+      yield_servings: number | null;
+    };
+    /**
+     * RecipeVersionUpdate
+     * @description Editable fields for a stored recipe version.
+     */
+    RecipeVersionUpdate: {
+      /** Cook Minutes */
+      cook_minutes?: number | null;
+      /** Cuisine */
+      cuisine?: string | null;
+      /** Image Url */
+      image_url?: string | null;
+      /** Ingredients */
+      ingredients?: components["schemas"]["RecipeIngredientCreate"][] | null;
+      /** Instructions */
+      instructions?: string | null;
+      /** Prep Minutes */
+      prep_minutes?: number | null;
+      /** Summary */
+      summary?: string | null;
+      /** Title */
+      title?: string | null;
+      /** Yield Servings */
+      yield_servings?: number | null;
+    };
     /**
      * ScanSessionCreate
      * @description Scan session creation request.
@@ -1639,10 +2047,7 @@ export interface components {
      * @description Create a pending user invitation.
      */
     UserInviteCreate: {
-      /**
-       * Email
-       * Format: email
-       */
+      /** Email */
       email: string;
       /** @default viewer */
       role: components["schemas"]["UserRole"];
@@ -1657,10 +2062,7 @@ export interface components {
        * Format: date-time
        */
       created_at: string;
-      /**
-       * Email
-       * Format: email
-       */
+      /** Email */
       email: string;
       /** Id */
       id: number;
@@ -1678,10 +2080,7 @@ export interface components {
       created_at: string;
       /** Display Name */
       display_name: string;
-      /**
-       * Email
-       * Format: email
-       */
+      /** Email */
       email: string;
       /** Id */
       id: number;
@@ -1749,9 +2148,7 @@ export interface operations {
   update_capability_api_v1_ai_capabilities__key__patch: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path: {
         key: string;
       };
@@ -1770,41 +2167,6 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["AiCapabilityRead"];
-        };
-      };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
-    };
-  };
-  analyze_photos_api_v1_ai_inventory_analyze_photos_post: {
-    parameters: {
-      query?: never;
-      header?: never;
-      path?: never;
-      cookie?: never;
-    };
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["PhotoAnalysisRequest"];
-      };
-    };
-    responses: {
-      /** @description Successful Response */
-      200: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": {
-            [key: string]: unknown;
-          };
         };
       };
       /** @description Validation Error */
@@ -1841,9 +2203,7 @@ export interface operations {
   create_provider_api_v1_ai_providers_post: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path?: never;
       cookie?: never;
     };
@@ -1896,9 +2256,7 @@ export interface operations {
   delete_provider_api_v1_ai_providers__provider_id__delete: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path: {
         provider_id: number;
       };
@@ -1927,9 +2285,7 @@ export interface operations {
   update_provider_api_v1_ai_providers__provider_id__patch: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path: {
         provider_id: number;
       };
@@ -2153,9 +2509,7 @@ export interface operations {
   create_job_api_v1_imports_jobs_post: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path?: never;
       cookie?: never;
     };
@@ -2208,9 +2562,7 @@ export interface operations {
   credential_status_api_v1_imports_sources__source_key__credential_get: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path: {
         source_key: string;
       };
@@ -2241,9 +2593,7 @@ export interface operations {
   save_credential_api_v1_imports_sources__source_key__credential_put: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path: {
         source_key: string;
       };
@@ -2360,6 +2710,129 @@ export interface operations {
         content: {
           "application/json": components["schemas"]["InventoryPhotoImportRead"];
         };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  list_occurrences_api_v1_meal_plans_get: {
+    parameters: {
+      query?: {
+        start_date?: string | null;
+        end_date?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MealPlanOccurrenceRead"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  create_api_v1_meal_plans_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["MealPlanCreate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      201: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["MealPlanSeriesRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  remove_occurrence_api_v1_meal_plans_occurrences__occurrence_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        occurrence_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  remove_series_api_v1_meal_plans__series_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        series_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
       };
       /** @description Validation Error */
       422: {
@@ -2530,6 +3003,70 @@ export interface operations {
       };
     };
   };
+  remove_api_v1_recipes__recipe_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        recipe_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  update_api_v1_recipes__recipe_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        recipe_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecipeUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecipeRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   cached_enhancement_api_v1_recipes__recipe_id__enhancement_get: {
     parameters: {
       query?: never;
@@ -2583,6 +3120,41 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["RecipeEnhancementRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  generate_image_api_v1_recipes__recipe_id__images_post: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        recipe_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecipeImageGenerateRequest"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecipeImageRead"];
         };
       };
       /** @description Validation Error */
@@ -2658,6 +3230,135 @@ export interface operations {
       };
     };
   };
+  versions_api_v1_recipes__recipe_id__versions_get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        recipe_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecipeVersionRead"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  show_version_api_v1_recipes__recipe_id__versions__version_id__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        recipe_id: number;
+        version_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecipeVersionRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  delete_version_api_v1_recipes__recipe_id__versions__version_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        recipe_id: number;
+        version_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  update_version_api_v1_recipes__recipe_id__versions__version_id__patch: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        recipe_id: number;
+        version_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["RecipeVersionUpdate"];
+      };
+    };
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["RecipeVersionRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   capabilities_api_v1_scanner_capabilities_get: {
     parameters: {
       query?: never;
@@ -2701,9 +3402,7 @@ export interface operations {
   create_session_api_v1_scanner_sessions_post: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path?: never;
       cookie?: never;
     };
@@ -2797,6 +3496,38 @@ export interface operations {
       };
     };
   };
+  planned_api_v1_shopping_list_planned_get: {
+    parameters: {
+      query?: {
+        start_date?: string | null;
+        end_date?: string | null;
+      };
+      header?: never;
+      path?: never;
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["PlannedShoppingItemRead"][];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
   suggestions_api_v1_shopping_list_suggestions_post: {
     parameters: {
       query?: never;
@@ -2813,6 +3544,35 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["ShoppingSuggestionsRead"];
+        };
+      };
+    };
+  };
+  remove_api_v1_shopping_list__item_id__delete: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        item_id: number;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      204: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content?: never;
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
         };
       };
     };
@@ -2875,9 +3635,7 @@ export interface operations {
   update_feature_api_v1_system_features__key__patch: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path: {
         key: string;
       };
@@ -2952,9 +3710,7 @@ export interface operations {
   list_users_api_v1_users_get: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path?: never;
       cookie?: never;
     };
@@ -2969,23 +3725,12 @@ export interface operations {
           "application/json": components["schemas"]["UserRead"][];
         };
       };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
   };
   list_invites_api_v1_users_invites_get: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path?: never;
       cookie?: never;
     };
@@ -3000,23 +3745,12 @@ export interface operations {
           "application/json": components["schemas"]["UserInviteRead"][];
         };
       };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
   };
   invite_user_api_v1_users_invites_post: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path?: never;
       cookie?: never;
     };
@@ -3049,9 +3783,7 @@ export interface operations {
   revoke_invite_api_v1_users_invites__invite_id__delete: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path: {
         invite_id: number;
       };
@@ -3080,9 +3812,7 @@ export interface operations {
   me_api_v1_users_me_get: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path?: never;
       cookie?: never;
     };
@@ -3097,23 +3827,12 @@ export interface operations {
           "application/json": components["schemas"]["CurrentUserRead"];
         };
       };
-      /** @description Validation Error */
-      422: {
-        headers: {
-          [name: string]: unknown;
-        };
-        content: {
-          "application/json": components["schemas"]["HTTPValidationError"];
-        };
-      };
     };
   };
   update_user_api_v1_users__user_id__patch: {
     parameters: {
       query?: never;
-      header?: {
-        "x-kombu-user-id"?: number | null;
-      };
+      header?: never;
       path: {
         user_id: number;
       };
@@ -3132,6 +3851,37 @@ export interface operations {
         };
         content: {
           "application/json": components["schemas"]["UserRead"];
+        };
+      };
+      /** @description Validation Error */
+      422: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": components["schemas"]["HTTPValidationError"];
+        };
+      };
+    };
+  };
+  get_blob_blobs__blob_key__get: {
+    parameters: {
+      query?: never;
+      header?: never;
+      path: {
+        blob_key: string;
+      };
+      cookie?: never;
+    };
+    requestBody?: never;
+    responses: {
+      /** @description Successful Response */
+      200: {
+        headers: {
+          [name: string]: unknown;
+        };
+        content: {
+          "application/json": unknown;
         };
       };
       /** @description Validation Error */

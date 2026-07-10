@@ -982,6 +982,249 @@
         "title": "KnownProviderRead",
         "type": "object"
       },
+      "MealPlanCreate": {
+        "description": "Request to schedule a recipe once or as a recurring series.",
+        "properties": {
+          "duration_minutes": {
+            "default": 30,
+            "maximum": 240.0,
+            "minimum": 15.0,
+            "title": "Duration Minutes",
+            "type": "integer"
+          },
+          "recipe_id": {
+            "exclusiveMinimum": 0.0,
+            "title": "Recipe Id",
+            "type": "integer"
+          },
+          "repeat_count": {
+            "anyOf": [
+              {
+                "maximum": 366.0,
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repeat Count"
+          },
+          "repeat_frequency": {
+            "default": "once",
+            "enum": [
+              "once",
+              "daily",
+              "weekly",
+              "monthly"
+            ],
+            "title": "Repeat Frequency",
+            "type": "string"
+          },
+          "repeat_interval": {
+            "default": 1,
+            "maximum": 30.0,
+            "minimum": 1.0,
+            "title": "Repeat Interval",
+            "type": "integer"
+          },
+          "repeat_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repeat Until"
+          },
+          "start_date": {
+            "format": "date",
+            "title": "Start Date",
+            "type": "string"
+          },
+          "start_time": {
+            "default": "18:00",
+            "pattern": "^([01]\\d|2[0-3]):[0-5]\\d$",
+            "title": "Start Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "recipe_id",
+          "start_date"
+        ],
+        "title": "MealPlanCreate",
+        "type": "object"
+      },
+      "MealPlanOccurrenceRead": {
+        "description": "One scheduled meal occurrence with its recipe context.",
+        "properties": {
+          "duration_minutes": {
+            "title": "Duration Minutes",
+            "type": "integer"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "occurrence_date": {
+            "format": "date",
+            "title": "Occurrence Date",
+            "type": "string"
+          },
+          "recipe_id": {
+            "title": "Recipe Id",
+            "type": "integer"
+          },
+          "recipe_image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Recipe Image Url"
+          },
+          "recipe_title": {
+            "title": "Recipe Title",
+            "type": "string"
+          },
+          "repeat_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repeat Count"
+          },
+          "repeat_frequency": {
+            "enum": [
+              "once",
+              "daily",
+              "weekly",
+              "monthly"
+            ],
+            "title": "Repeat Frequency",
+            "type": "string"
+          },
+          "repeat_interval": {
+            "title": "Repeat Interval",
+            "type": "integer"
+          },
+          "repeat_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repeat Until"
+          },
+          "series_id": {
+            "title": "Series Id",
+            "type": "integer"
+          },
+          "start_time": {
+            "title": "Start Time",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "series_id",
+          "recipe_id",
+          "recipe_title",
+          "recipe_image_url",
+          "occurrence_date",
+          "start_time",
+          "duration_minutes",
+          "repeat_frequency",
+          "repeat_interval",
+          "repeat_count",
+          "repeat_until"
+        ],
+        "title": "MealPlanOccurrenceRead",
+        "type": "object"
+      },
+      "MealPlanSeriesRead": {
+        "description": "Created series summary returned after scheduling a recipe.",
+        "properties": {
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "occurrences": {
+            "items": {
+              "$ref": "#/components/schemas/MealPlanOccurrenceRead"
+            },
+            "title": "Occurrences",
+            "type": "array"
+          },
+          "recipe_id": {
+            "title": "Recipe Id",
+            "type": "integer"
+          },
+          "repeat_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repeat Count"
+          },
+          "repeat_frequency": {
+            "enum": [
+              "once",
+              "daily",
+              "weekly",
+              "monthly"
+            ],
+            "title": "Repeat Frequency",
+            "type": "string"
+          },
+          "repeat_interval": {
+            "title": "Repeat Interval",
+            "type": "integer"
+          },
+          "repeat_until": {
+            "anyOf": [
+              {
+                "format": "date",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Repeat Until"
+          }
+        },
+        "required": [
+          "id",
+          "recipe_id",
+          "repeat_frequency",
+          "repeat_interval",
+          "repeat_count",
+          "repeat_until",
+          "occurrences"
+        ],
+        "title": "MealPlanSeriesRead",
+        "type": "object"
+      },
       "NavigationItem": {
         "description": "Frontend navigation item provided by the API.",
         "properties": {
@@ -1035,17 +1278,59 @@
         "title": "OverviewMetric",
         "type": "object"
       },
-      "PhotoAnalysisRequest": {
+      "PlannedShoppingItemRead": {
+        "description": "Aggregated ingredient demand created by scheduled meals.",
         "properties": {
-          "image_paths": {
+          "already_needed": {
+            "default": false,
+            "title": "Already Needed",
+            "type": "boolean"
+          },
+          "first_needed_on": {
+            "format": "date",
+            "title": "First Needed On",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "occurrence_count": {
+            "title": "Occurrence Count",
+            "type": "integer"
+          },
+          "quantity": {
+            "title": "Quantity",
+            "type": "number"
+          },
+          "recipe_titles": {
             "items": {
               "type": "string"
             },
-            "title": "Image Paths",
+            "title": "Recipe Titles",
             "type": "array"
+          },
+          "unit": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit"
           }
         },
-        "title": "PhotoAnalysisRequest",
+        "required": [
+          "name",
+          "quantity",
+          "unit",
+          "occurrence_count",
+          "recipe_titles",
+          "first_needed_on"
+        ],
+        "title": "PlannedShoppingItemRead",
         "type": "object"
       },
       "ReadinessRead": {
@@ -1265,6 +1550,17 @@
           "title": {
             "title": "Title",
             "type": "string"
+          },
+          "version_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Version Id"
           }
         },
         "required": [
@@ -1330,6 +1626,65 @@
           "ingredients"
         ],
         "title": "RecipeFilterValues",
+        "type": "object"
+      },
+      "RecipeImageGenerateRequest": {
+        "description": "Optional custom prompt for a generated recipe image.",
+        "properties": {
+          "prompt": {
+            "anyOf": [
+              {
+                "maxLength": 2000,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt"
+          }
+        },
+        "title": "RecipeImageGenerateRequest",
+        "type": "object"
+      },
+      "RecipeImageRead": {
+        "description": "Cached generated image for a recipe.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "image_url": {
+            "title": "Image Url",
+            "type": "string"
+          },
+          "model": {
+            "title": "Model",
+            "type": "string"
+          },
+          "prompt": {
+            "title": "Prompt",
+            "type": "string"
+          },
+          "provider": {
+            "title": "Provider",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "prompt",
+          "image_url",
+          "provider",
+          "model",
+          "created_at"
+        ],
+        "title": "RecipeImageRead",
         "type": "object"
       },
       "RecipeImportUrlRequest": {
@@ -1538,6 +1893,13 @@
             ],
             "title": "Image Url"
           },
+          "images": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeImageRead"
+            },
+            "title": "Images",
+            "type": "array"
+          },
           "ingredients": {
             "items": {
               "$ref": "#/components/schemas/RecipeIngredientRead"
@@ -1675,6 +2037,403 @@
         ],
         "title": "RecipeSourceType",
         "type": "string"
+      },
+      "RecipeUpdate": {
+        "description": "Partial recipe update request.",
+        "properties": {
+          "cook_minutes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cook Minutes"
+          },
+          "cuisine": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cuisine"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
+          "ingredients": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RecipeIngredientCreate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingredients"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "is_favorite": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Favorite"
+          },
+          "prep_minutes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Minutes"
+          },
+          "source_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/RecipeSourceType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "maxLength": 1024,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 240,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "yield_servings": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yield Servings"
+          }
+        },
+        "title": "RecipeUpdate",
+        "type": "object"
+      },
+      "RecipeVersionRead": {
+        "description": "A complete recipe snapshot, including the virtual original version.",
+        "properties": {
+          "cook_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cook Minutes"
+          },
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "cuisine": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cuisine"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
+          "ingredients": {
+            "items": {
+              "$ref": "#/components/schemas/RecipeIngredientCreate"
+            },
+            "title": "Ingredients",
+            "type": "array"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "prep_minutes": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Minutes"
+          },
+          "recipe_id": {
+            "title": "Recipe Id",
+            "type": "integer"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          },
+          "updated_at": {
+            "format": "date-time",
+            "title": "Updated At",
+            "type": "string"
+          },
+          "version_type": {
+            "title": "Version Type",
+            "type": "string"
+          },
+          "yield_servings": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yield Servings"
+          }
+        },
+        "required": [
+          "id",
+          "recipe_id",
+          "version_type",
+          "title",
+          "summary",
+          "image_url",
+          "instructions",
+          "cuisine",
+          "yield_servings",
+          "prep_minutes",
+          "cook_minutes",
+          "created_at",
+          "updated_at"
+        ],
+        "title": "RecipeVersionRead",
+        "type": "object"
+      },
+      "RecipeVersionUpdate": {
+        "description": "Editable fields for a stored recipe version.",
+        "properties": {
+          "cook_minutes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cook Minutes"
+          },
+          "cuisine": {
+            "anyOf": [
+              {
+                "maxLength": 120,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cuisine"
+          },
+          "image_url": {
+            "anyOf": [
+              {
+                "maxLength": 2048,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Url"
+          },
+          "ingredients": {
+            "anyOf": [
+              {
+                "items": {
+                  "$ref": "#/components/schemas/RecipeIngredientCreate"
+                },
+                "type": "array"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ingredients"
+          },
+          "instructions": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Instructions"
+          },
+          "prep_minutes": {
+            "anyOf": [
+              {
+                "minimum": 0.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prep Minutes"
+          },
+          "summary": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Summary"
+          },
+          "title": {
+            "anyOf": [
+              {
+                "maxLength": 240,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Title"
+          },
+          "yield_servings": {
+            "anyOf": [
+              {
+                "minimum": 1.0,
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Yield Servings"
+          }
+        },
+        "title": "RecipeVersionUpdate",
+        "type": "object"
       },
       "ScanSessionCreate": {
         "description": "Scan session creation request.",
@@ -2192,7 +2951,9 @@
         "description": "Create a pending user invitation.",
         "properties": {
           "email": {
-            "format": "email",
+            "maxLength": 320,
+            "minLength": 3,
+            "pattern": "^[^@\\s]+@[^@\\s]+$",
             "title": "Email",
             "type": "string"
           },
@@ -2216,7 +2977,6 @@
             "type": "string"
           },
           "email": {
-            "format": "email",
             "title": "Email",
             "type": "string"
           },
@@ -2250,7 +3010,6 @@
             "type": "string"
           },
           "email": {
-            "format": "email",
             "title": "Email",
             "type": "string"
           },
@@ -2403,22 +3162,6 @@
               "title": "Key",
               "type": "string"
             }
-          },
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
-            }
           }
         ],
         "requestBody": {
@@ -2459,50 +3202,6 @@
         ]
       }
     },
-    "/api/v1/ai/inventory/analyze-photos": {
-      "post": {
-        "description": "Analyze food photos to identify inventory items.",
-        "operationId": "analyze_photos_api_v1_ai_inventory_analyze_photos_post",
-        "requestBody": {
-          "content": {
-            "application/json": {
-              "schema": {
-                "$ref": "#/components/schemas/PhotoAnalysisRequest"
-              }
-            }
-          },
-          "required": true
-        },
-        "responses": {
-          "200": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "additionalProperties": true,
-                  "title": "Response Analyze Photos Api V1 Ai Inventory Analyze Photos Post",
-                  "type": "object"
-                }
-              }
-            },
-            "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
-          }
-        },
-        "summary": "Analyze Photos",
-        "tags": [
-          "ai"
-        ]
-      }
-    },
     "/api/v1/ai/providers": {
       "get": {
         "description": "List all configured AI providers.",
@@ -2531,24 +3230,6 @@
       "post": {
         "description": "Add a new AI provider configuration.",
         "operationId": "create_provider_api_v1_ai_providers_post",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -2626,22 +3307,6 @@
               "title": "Provider Id",
               "type": "integer"
             }
-          },
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
-            }
           }
         ],
         "responses": {
@@ -2675,22 +3340,6 @@
             "schema": {
               "title": "Provider Id",
               "type": "integer"
-            }
-          },
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
             }
           }
         ],
@@ -2982,26 +3631,8 @@
         ]
       },
       "post": {
-        "description": "Create an import job and execute it in the background.",
+        "description": "Create a durable import job for the Kombu worker.",
         "operationId": "create_job_api_v1_imports_jobs_post",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3079,22 +3710,6 @@
               "title": "Source Key",
               "type": "string"
             }
-          },
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
-            }
           }
         ],
         "responses": {
@@ -3135,22 +3750,6 @@
             "schema": {
               "title": "Source Key",
               "type": "string"
-            }
-          },
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
             }
           }
         ],
@@ -3325,6 +3924,190 @@
         "summary": "Import Photos",
         "tags": [
           "inventory"
+        ]
+      }
+    },
+    "/api/v1/meal-plans": {
+      "get": {
+        "description": "List scheduled meal occurrences in a calendar window.",
+        "operationId": "list_occurrences_api_v1_meal_plans_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "start_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/MealPlanOccurrenceRead"
+                  },
+                  "title": "Response List Occurrences Api V1 Meal Plans Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Occurrences",
+        "tags": [
+          "meal-plans"
+        ]
+      },
+      "post": {
+        "description": "Schedule a recipe and return its materialized recurrence series.",
+        "operationId": "create_api_v1_meal_plans_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MealPlanCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MealPlanSeriesRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Create",
+        "tags": [
+          "meal-plans"
+        ]
+      }
+    },
+    "/api/v1/meal-plans/occurrences/{occurrence_id}": {
+      "delete": {
+        "description": "Delete one occurrence while leaving the rest of its series intact.",
+        "operationId": "remove_occurrence_api_v1_meal_plans_occurrences__occurrence_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "occurrence_id",
+            "required": true,
+            "schema": {
+              "title": "Occurrence Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Occurrence",
+        "tags": [
+          "meal-plans"
+        ]
+      }
+    },
+    "/api/v1/meal-plans/{series_id}": {
+      "delete": {
+        "description": "Delete a complete meal plan series and all of its occurrences.",
+        "operationId": "remove_series_api_v1_meal_plans__series_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "series_id",
+            "required": true,
+            "schema": {
+              "title": "Series Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove Series",
+        "tags": [
+          "meal-plans"
         ]
       }
     },
@@ -3618,6 +4401,40 @@
       }
     },
     "/api/v1/recipes/{recipe_id}": {
+      "delete": {
+        "description": "Delete a recipe and its child rows.",
+        "operationId": "remove_api_v1_recipes__recipe_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove",
+        "tags": [
+          "recipes"
+        ]
+      },
       "get": {
         "description": "Return one recipe.",
         "operationId": "show_api_v1_recipes__recipe_id__get",
@@ -3655,6 +4472,57 @@
           }
         },
         "summary": "Show",
+        "tags": [
+          "recipes"
+        ]
+      },
+      "patch": {
+        "description": "Update a recipe and optionally replace its ingredient lines.",
+        "operationId": "update_api_v1_recipes__recipe_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update",
         "tags": [
           "recipes"
         ]
@@ -3762,6 +4630,59 @@
         ]
       }
     },
+    "/api/v1/recipes/{recipe_id}/images": {
+      "post": {
+        "description": "Generate and cache a recipe image using the configured image provider.",
+        "operationId": "generate_image_api_v1_recipes__recipe_id__images_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeImageGenerateRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeImageRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Generate Image",
+        "tags": [
+          "recipes"
+        ]
+      }
+    },
     "/api/v1/recipes/{recipe_id}/inventory-suggestions": {
       "post": {
         "description": "Suggest inventory-backed alternatives for missing ingredients.",
@@ -3852,6 +4773,208 @@
         ]
       }
     },
+    "/api/v1/recipes/{recipe_id}/versions": {
+      "get": {
+        "description": "List the original recipe and all editable generated snapshots.",
+        "operationId": "versions_api_v1_recipes__recipe_id__versions_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RecipeVersionRead"
+                  },
+                  "title": "Response Versions Api V1 Recipes  Recipe Id  Versions Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Versions",
+        "tags": [
+          "recipes"
+        ]
+      }
+    },
+    "/api/v1/recipes/{recipe_id}/versions/{version_id}": {
+      "delete": {
+        "description": "Delete one generated recipe snapshot.",
+        "operationId": "delete_version_api_v1_recipes__recipe_id__versions__version_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "title": "Version Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Delete Version",
+        "tags": [
+          "recipes"
+        ]
+      },
+      "get": {
+        "description": "Return one stored recipe snapshot.",
+        "operationId": "show_version_api_v1_recipes__recipe_id__versions__version_id__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "title": "Version Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeVersionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Show Version",
+        "tags": [
+          "recipes"
+        ]
+      },
+      "patch": {
+        "description": "Edit a generated recipe snapshot.",
+        "operationId": "update_version_api_v1_recipes__recipe_id__versions__version_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "path",
+            "name": "version_id",
+            "required": true,
+            "schema": {
+              "title": "Version Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RecipeVersionUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeVersionRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Version",
+        "tags": [
+          "recipes"
+        ]
+      }
+    },
     "/api/v1/scanner/capabilities": {
       "get": {
         "description": "Return supported scanner workflows.",
@@ -3906,24 +5029,6 @@
       "post": {
         "description": "Create a scanner session.",
         "operationId": "create_session_api_v1_scanner_sessions_post",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4056,6 +5161,78 @@
         ]
       }
     },
+    "/api/v1/shopping-list/planned": {
+      "get": {
+        "description": "Return ingredient demand created by scheduled meals.",
+        "operationId": "planned_api_v1_shopping_list_planned_get",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "start_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Start Date"
+            }
+          },
+          {
+            "in": "query",
+            "name": "end_date",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "format": "date",
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "End Date"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/PlannedShoppingItemRead"
+                  },
+                  "title": "Response Planned Api V1 Shopping List Planned Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Planned",
+        "tags": [
+          "shopping-list"
+        ]
+      }
+    },
     "/api/v1/shopping-list/suggestions": {
       "post": {
         "description": "Suggest useful items from stock, expiry, recipes, and previous runs.",
@@ -4079,6 +5256,40 @@
       }
     },
     "/api/v1/shopping-list/{item_id}": {
+      "delete": {
+        "description": "Delete a shopping list item.",
+        "operationId": "remove_api_v1_shopping_list__item_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "item_id",
+            "required": true,
+            "schema": {
+              "title": "Item Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Remove",
+        "tags": [
+          "shopping-list"
+        ]
+      },
       "patch": {
         "description": "Update a shopping list item.",
         "operationId": "update_api_v1_shopping_list__item_id__patch",
@@ -4170,22 +5381,6 @@
               "title": "Key",
               "type": "string"
             }
-          },
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
-            }
           }
         ],
         "requestBody": {
@@ -4274,24 +5469,6 @@
       "get": {
         "description": "List users for administrator management.",
         "operationId": "list_users_api_v1_users_get",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "content": {
@@ -4306,16 +5483,6 @@
               }
             },
             "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
           }
         },
         "summary": "List Users",
@@ -4328,24 +5495,6 @@
       "get": {
         "description": "List pending invitations.",
         "operationId": "list_invites_api_v1_users_invites_get",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "content": {
@@ -4360,16 +5509,6 @@
               }
             },
             "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
           }
         },
         "summary": "List Invites",
@@ -4380,24 +5519,6 @@
       "post": {
         "description": "Create or replace a pending local invitation.",
         "operationId": "invite_user_api_v1_users_invites_post",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
-            }
-          }
-        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -4449,22 +5570,6 @@
               "title": "Invite Id",
               "type": "integer"
             }
-          },
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
-            }
           }
         ],
         "responses": {
@@ -4492,24 +5597,6 @@
       "get": {
         "description": "Return the resolved local user and effective permissions.",
         "operationId": "me_api_v1_users_me_get",
-        "parameters": [
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
-            }
-          }
-        ],
         "responses": {
           "200": {
             "content": {
@@ -4520,16 +5607,6 @@
               }
             },
             "description": "Successful Response"
-          },
-          "422": {
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/HTTPValidationError"
-                }
-              }
-            },
-            "description": "Validation Error"
           }
         },
         "summary": "Me",
@@ -4550,22 +5627,6 @@
             "schema": {
               "title": "User Id",
               "type": "integer"
-            }
-          },
-          {
-            "in": "header",
-            "name": "x-kombu-user-id",
-            "required": false,
-            "schema": {
-              "anyOf": [
-                {
-                  "type": "integer"
-                },
-                {
-                  "type": "null"
-                }
-              ],
-              "title": "X-Kombu-User-Id"
             }
           }
         ],
@@ -4604,6 +5665,47 @@
         "summary": "Update User",
         "tags": [
           "users"
+        ]
+      }
+    },
+    "/blobs/{blob_key}": {
+      "get": {
+        "description": "Serve an application-owned blob from the configured storage backend.",
+        "operationId": "get_blob_blobs__blob_key__get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "blob_key",
+            "required": true,
+            "schema": {
+              "title": "Blob Key",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {}
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Get Blob",
+        "tags": [
+          "blobs"
         ]
       }
     },

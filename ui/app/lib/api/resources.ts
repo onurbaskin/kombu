@@ -40,9 +40,17 @@ export type ExpiryAlert = ApiSchema<"ExpiryAlertRead">;
 export type ImportJob = ApiSchema<"ImportJobRead">;
 export type ImportSource = ApiSchema<"ImportSourceRead">;
 export type InventoryItem = ApiSchema<"InventoryItemRead">;
+export type MealPlanCreate = ApiSchema<"MealPlanCreate">;
+export type MealPlanOccurrence = ApiSchema<"MealPlanOccurrenceRead">;
+export type MealPlanSeries = ApiSchema<"MealPlanSeriesRead">;
+export type PlannedShoppingItem = ApiSchema<"PlannedShoppingItemRead">;
 export type Readiness = ApiSchema<"ReadinessRead">;
 export type Recipe = ApiSchema<"RecipeRead">;
 export type RecipeCreate = ApiSchema<"RecipeCreate">;
+export type RecipeImage = ApiSchema<"RecipeImageRead">;
+export type RecipeUpdate = ApiSchema<"RecipeUpdate">;
+export type RecipeVersion = ApiSchema<"RecipeVersionRead">;
+export type RecipeVersionUpdate = ApiSchema<"RecipeVersionUpdate">;
 export type RecipeFilterValues = ApiSchema<"RecipeFilterValues">;
 export type RecipeListResponse = ApiSchema<"RecipeListResponse">;
 export type ScannerCapability = ApiSchema<"ScannerCapabilityRead">;
@@ -80,6 +88,7 @@ export type RecipeEnhancement = {
   tips: string[];
   cached: boolean;
   generated_at: string;
+  version_id?: number | null;
 };
 
 export type IngredientSuggestion = {
@@ -278,26 +287,39 @@ const fallbackScannerCapabilities: ScannerCapability[] = [
     description: "Use a camera or dedicated scanner as the capture device.",
     requires_hardware: false,
   },
-  {
-    key: "dedicated-scanner",
-    label: "Dedicated scanner",
-    description: "Leave room for USB, Bluetooth, or network scanner workers.",
-    requires_hardware: true,
-  },
 ];
 
 const fallbackAiCapabilities: AiCapability[] = [
   {
-    key: "recipe-planning",
-    label: "Recipe planning",
+    key: "shopping_suggestions",
+    label: "Smart shopping suggestions",
     enabled: false,
-    description: "Plan meals from recipes, inventory, and diet notes.",
+    description: "Suggest what to buy from inventory gaps and planned recipes.",
   },
   {
-    key: "inventory-insights",
-    label: "Inventory insights",
+    key: "inventory_photo_analysis",
+    label: "Photo inventory analysis",
     enabled: false,
-    description: "Suggest what to cook before food expires.",
+    description: "Scan food photos to populate inventory automatically.",
+  },
+  {
+    key: "recipe_enhancement",
+    label: "Recipe enhancement",
+    enabled: false,
+    description: "Polish and structure recipes with AI-driven formatting.",
+  },
+  {
+    key: "recipe_image_generation",
+    label: "Recipe image generation",
+    enabled: false,
+    description:
+      "Generate and cache an editorial image from full recipe details.",
+  },
+  {
+    key: "inventory_substitutions",
+    label: "Ingredient substitutions",
+    enabled: false,
+    description: "Suggest alternatives when you're missing an ingredient.",
   },
 ];
 
@@ -358,6 +380,49 @@ export function getShoppingItems(): Promise<ApiResult<ShoppingItem[]>> {
   return withFallback(client.GET("/api/v1/shopping-list"), fallbackShopping);
 }
 
+export function getPlannedShopping(
+  startDate: string,
+  endDate: string,
+): Promise<ApiResult<PlannedShoppingItem[]>> {
+  return withFallback(
+    client.GET("/api/v1/shopping-list/planned", {
+      params: { query: { start_date: startDate, end_date: endDate } },
+    }),
+    [],
+  );
+}
+
+export function getMealPlan(
+  startDate: string,
+  endDate: string,
+): Promise<ApiResult<MealPlanOccurrence[]>> {
+  return withFallback(
+    client.GET("/api/v1/meal-plans", {
+      params: { query: { start_date: startDate, end_date: endDate } },
+    }),
+    [],
+  );
+}
+
+export function createMealPlan(
+  body: MealPlanCreate,
+): Promise<ApiResult<MealPlanSeries>> {
+  return withFallback(
+    client.POST("/api/v1/meal-plans", { body }),
+    {} as unknown as MealPlanSeries,
+  );
+}
+
+export function deleteMealPlanSeries(id: number): Promise<ApiResult<null>> {
+  return recipeAction<null>(`/api/v1/meal-plans/${id}`, { method: "DELETE" });
+}
+
+export function deleteMealPlanOccurrence(id: number): Promise<ApiResult<null>> {
+  return recipeAction<null>(`/api/v1/meal-plans/occurrences/${id}`, {
+    method: "DELETE",
+  });
+}
+
 export function createShoppingItem(body: {
   name: string;
   quantity: number;
@@ -374,7 +439,12 @@ export function createShoppingItem(body: {
 
 export function updateShoppingItem(
   id: number,
-  body: { status?: "needed" | "purchased" },
+  body: {
+    status?: "needed" | "purchased";
+    quantity?: number;
+    unit?: string | null;
+    category?: string | null;
+  },
 ): Promise<ApiResult<ShoppingItem>> {
   return withFallback(
     client.PATCH("/api/v1/shopping-list/{item_id}", {
@@ -382,6 +452,15 @@ export function updateShoppingItem(
       body,
     }),
     {} as ShoppingItem,
+  );
+}
+
+export function deleteShoppingItem(id: number): Promise<ApiResult<null>> {
+  return withFallback(
+    client.DELETE("/api/v1/shopping-list/{item_id}", {
+      params: { path: { item_id: id } },
+    }),
+    null,
   );
 }
 
@@ -545,6 +624,46 @@ export function getRecipe(id: number): Promise<ApiResult<Recipe>> {
   );
 }
 
+export function getRecipeVersions(
+  id: number,
+): Promise<ApiResult<RecipeVersion[] | null>> {
+  return recipeAction<RecipeVersion[]>(`/api/v1/recipes/${id}/versions`);
+}
+
+export function getRecipeVersion(
+  recipeId: number,
+  versionId: number,
+): Promise<ApiResult<RecipeVersion | null>> {
+  return recipeAction<RecipeVersion>(
+    `/api/v1/recipes/${recipeId}/versions/${versionId}`,
+  );
+}
+
+export function updateRecipeVersion(
+  recipeId: number,
+  versionId: number,
+  body: RecipeVersionUpdate,
+): Promise<ApiResult<RecipeVersion | null>> {
+  return recipeAction<RecipeVersion>(
+    `/api/v1/recipes/${recipeId}/versions/${versionId}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+  );
+}
+
+export function deleteRecipeVersion(
+  recipeId: number,
+  versionId: number,
+): Promise<ApiResult<null>> {
+  return recipeAction<null>(
+    `/api/v1/recipes/${recipeId}/versions/${versionId}`,
+    { method: "DELETE" },
+  );
+}
+
 export function createRecipe(body: RecipeCreate): Promise<ApiResult<Recipe>> {
   return withFallback(
     client.POST("/api/v1/recipes", {
@@ -552,6 +671,39 @@ export function createRecipe(body: RecipeCreate): Promise<ApiResult<Recipe>> {
     }),
     {} as unknown as Recipe,
   );
+}
+
+export function updateRecipe(
+  id: number,
+  body: RecipeUpdate,
+): Promise<ApiResult<Recipe>> {
+  return withFallback(
+    client.PATCH("/api/v1/recipes/{recipe_id}", {
+      params: { path: { recipe_id: id } },
+      body,
+    }),
+    {} as unknown as Recipe,
+  );
+}
+
+export function deleteRecipe(id: number): Promise<ApiResult<null>> {
+  return withFallback(
+    client.DELETE("/api/v1/recipes/{recipe_id}", {
+      params: { path: { recipe_id: id } },
+    }),
+    null,
+  );
+}
+
+export function generateRecipeImage(
+  id: number,
+  prompt?: string,
+): Promise<ApiResult<RecipeImage | null>> {
+  return recipeAction<RecipeImage>(`/api/v1/recipes/${id}/images`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ prompt: prompt?.trim() || null }),
+  });
 }
 
 export function createImportJob(body: {
@@ -702,8 +854,21 @@ export async function updateAiProvider(
   }
 }
 
-export async function deleteAiProvider(id: number): Promise<void> {
-  await fetch(`${baseUrl}/api/v1/ai/providers/${id}`, { method: "DELETE" });
+export async function deleteAiProvider(id: number): Promise<ApiResult<null>> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/ai/providers/${id}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return { data: null, source: "api" };
+  } catch (error) {
+    return {
+      data: null,
+      source: "fallback",
+      error:
+        error instanceof Error ? error.message : "Unable to delete provider.",
+    };
+  }
 }
 
 export async function updateFeatureFlag(
@@ -765,6 +930,18 @@ export async function getUserInvites(): Promise<ApiResult<UserInvite[]>> {
     return { data: await res.json(), source: "api" };
   } catch (error) {
     return { data: [], source: "fallback", error: String(error) };
+  }
+}
+
+export async function revokeUserInvite(id: number): Promise<ApiResult<null>> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/users/invites/${id}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return { data: null, source: "api" };
+  } catch (error) {
+    return { data: null, source: "fallback", error: String(error) };
   }
 }
 
