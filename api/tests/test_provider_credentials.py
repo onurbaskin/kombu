@@ -34,7 +34,8 @@ def test_api_keys_are_encrypted_at_rest() -> None:
 def test_missing_encryption_key_is_a_controlled_error(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    monkeypatch.delenv("KOMBU_ENCRYPTION_KEY")
+    # An explicit empty value overrides any developer-local `.env` entry.
+    monkeypatch.setenv("KOMBU_ENCRYPTION_KEY", "")
     get_settings.cache_clear()
 
     with pytest.raises(ProviderCredentialError, match="not configured"):
