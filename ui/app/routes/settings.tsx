@@ -55,6 +55,7 @@ import {
   getSystemOverview,
   getUserInvites,
   inviteUser,
+  revokeUserInvite,
   saveImportCredential,
   updateAiCapability,
   updateAiProvider,
@@ -227,6 +228,17 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
     revalidator.revalidate();
   }
 
+  async function revokeInvite(id: number) {
+    setBusyKey(`invite:${id}`);
+    const result = await revokeUserInvite(id);
+    setBusyKey(null);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    revalidator.revalidate();
+  }
+
   async function toggleFeature(key: string, enabled: boolean) {
     setBusyKey(`feature:${key}`);
     const result = await updateFeatureFlag(key, enabled);
@@ -282,7 +294,10 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                 onCheckedChange={(enabled) =>
                   void updateAiProvider(provider.id, {
                     is_enabled: enabled,
-                  }).then(() => revalidator.revalidate())
+                  }).then((result) => {
+                    if (result.error) setError(result.error);
+                    else revalidator.revalidate();
+                  })
                 }
                 disabled={!isAdmin}
                 aria-label={`Enable ${provider.label}`}
@@ -299,9 +314,10 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                 size="icon-sm"
                 variant="ghost"
                 onClick={() =>
-                  void deleteAiProvider(provider.id).then(() =>
-                    revalidator.revalidate(),
-                  )
+                  void deleteAiProvider(provider.id).then((result) => {
+                    if (result.error) setError(result.error);
+                    else revalidator.revalidate();
+                  })
                 }
                 aria-label={`Delete ${provider.label}`}
               >
@@ -384,8 +400,11 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               <Select
                 value={managedUser.role}
                 onValueChange={(role: Role) =>
-                  void updateManagedUser(managedUser.id, { role }).then(() =>
-                    revalidator.revalidate(),
+                  void updateManagedUser(managedUser.id, { role }).then(
+                    (result) => {
+                      if (result.error) setError(result.error);
+                      else revalidator.revalidate();
+                    },
                   )
                 }
               >
@@ -409,7 +428,10 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                 checked={managedUser.is_active}
                 onCheckedChange={(is_active) =>
                   void updateManagedUser(managedUser.id, { is_active }).then(
-                    () => revalidator.revalidate(),
+                    (result) => {
+                      if (result.error) setError(result.error);
+                      else revalidator.revalidate();
+                    },
                   )
                 }
                 aria-label={`Active ${managedUser.display_name}`}
@@ -423,6 +445,15 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
               description="Invitation pending"
             >
               <Badge variant="secondary">{invite.role}</Badge>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => void revokeInvite(invite.id)}
+                disabled={busyKey === `invite:${invite.id}`}
+                aria-label={`Revoke invite for ${invite.email}`}
+              >
+                <Trash2Icon />
+              </Button>
             </SettingsRow>
           ))}
         </SettingsSection>
@@ -460,7 +491,10 @@ export default function Settings({ loaderData }: Route.ComponentProps) {
                   void createImportJob({
                     source_name: source.label,
                     source_type: source.source_type,
-                  }).then(() => revalidator.revalidate())
+                  }).then((result) => {
+                    if (result.error) setError(result.error);
+                    else revalidator.revalidate();
+                  })
                 }
               >
                 <DownloadIcon data-icon="inline-start" /> Import

@@ -1,7 +1,6 @@
 import { CameraIcon, ScanBarcodeIcon, XIcon } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
-import { useRevalidator } from "react-router";
-import { PageHeader } from "~/components/page-header";
+import { useRevalidator, useRouteLoaderData } from "react-router";
 import { SourceNotice } from "~/components/source-notice";
 import { StatusBadge } from "~/components/status-badge";
 import { Alert, AlertDescription, AlertTitle } from "~/components/ui/alert";
@@ -15,27 +14,68 @@ import {
   EmptyTitle,
 } from "~/components/ui/empty";
 import {
+  createInventoryItem,
   createScanSession,
   getScannerCapabilities,
   getScanSessions,
+  getSystemOverview,
 } from "~/lib/api/resources";
 import type { Route } from "./+types/scanner";
 
 type Product = { name: string; brand: string | null; imageUrl: string | null };
+const START_SCAN_EVENT = "kombu:scanner:start";
 
 export function meta() {
   return [{ title: "Scanner | Kombu" }];
 }
 export async function loader() {
-  const [capabilities, sessions] = await Promise.all([
+  const [capabilities, sessions, overview] = await Promise.all([
     getScannerCapabilities(),
     getScanSessions(),
+    getSystemOverview(),
   ]);
-  return { capabilities, sessions };
+  return { capabilities, sessions, overview };
+}
+
+export const handle = { topbar: ScannerTopbar };
+
+function ScannerTopbar() {
+  const data = useRouteLoaderData<typeof loader>("routes/scanner");
+  const [isMobile, setIsMobile] = useState(false);
+  const scannerEnabled = data?.overview.data.features.some(
+    (feature) => feature.key === "scanner" && feature.enabled,
+  );
+
+  useEffect(() => {
+    const media = window.matchMedia("(max-width: 767px)");
+    const update = () => setIsMobile(media.matches);
+    update();
+    media.addEventListener("change", update);
+    return () => media.removeEventListener("change", update);
+  }, []);
+
+  return (
+    <Button
+      size="sm"
+      disabled={!isMobile || !scannerEnabled}
+      title={
+        !scannerEnabled
+          ? "Enable scanner workflows in Settings"
+          : !isMobile
+            ? "Camera scanning is available on mobile"
+            : undefined
+      }
+      onClick={() => window.dispatchEvent(new Event(START_SCAN_EVENT))}
+    >
+      <ScanBarcodeIcon data-icon="inline-start" />
+      <span className="hidden sm:inline">Start capture</span>
+      <span className="sr-only sm:hidden">Start capture</span>
+    </Button>
+  );
 }
 
 export default function Scanner({ loaderData }: Route.ComponentProps) {
-  const { capabilities, sessions } = loaderData;
+  const { capabilities, sessions, overview } = loaderData;
   const revalidator = useRevalidator();
   const videoRef = useRef<HTMLVideoElement>(null);
   const controlsRef = useRef<{ stop: () => void } | null>(null);
@@ -44,6 +84,10 @@ export default function Scanner({ loaderData }: Route.ComponentProps) {
   const [error, setError] = useState<string | null>(null);
   const [code, setCode] = useState<string | null>(null);
   const [product, setProduct] = useState<Product | null>(null);
+  const [addingProduct, setAddingProduct] = useState(false);
+  const scannerEnabled = overview.data.features.some(
+    (feature) => feature.key === "scanner" && feature.enabled,
+  );
 
   useEffect(() => {
     const media = window.matchMedia("(max-width: 767px)");
@@ -53,6 +97,11 @@ export default function Scanner({ loaderData }: Route.ComponentProps) {
     return () => media.removeEventListener("change", update);
   }, []);
   useEffect(() => () => controlsRef.current?.stop(), []);
+  useEffect(() => {
+    const start = () => void startScanner();
+    window.addEventListener(START_SCAN_EVENT, start);
+    return () => window.removeEventListener(START_SCAN_EVENT, start);
+  });
 
   async function startScanner() {
     if (!videoRef.current) return;
@@ -84,7 +133,8 @@ export default function Scanner({ loaderData }: Route.ComponentProps) {
             device_hint: "browser camera",
             raw_payload: value,
           });
-          if (!session.error) revalidator.revalidate();
+          if (session.error) setError(session.error);
+          else revalidator.revalidate();
           await lookupProduct(value);
         },
       );
@@ -137,15 +187,40 @@ export default function Scanner({ loaderData }: Route.ComponentProps) {
     }
   }
 
+  async function addProductToInventory() {
+    if (!product) return;
+    setAddingProduct(true);
+    const result = await createInventoryItem({
+      name: product.name,
+      quantity: 1,
+      location: "pantry",
+      source: `barcode:${code ?? "unknown"}`,
+      notes: product.brand,
+    });
+    setAddingProduct(false);
+    if (result.error) {
+      setError(result.error);
+      return;
+    }
+    revalidator.revalidate();
+  }
+
   return (
     <div className="flex flex-col gap-5">
-      <PageHeader
-        eyebrow="Scanner"
-        title="Scan a product"
-        description="Use your phone camera to capture a barcode or QR code."
-      />
-      <SourceNotice results={[capabilities, sessions]} />
-      {!isMobile ? (
+      <SourceNotice results={[capabilities, sessions, overview]} />
+      {!scannerEnabled ? (
+        <Empty>
+          <EmptyHeader>
+            <EmptyMedia variant="icon">
+              <ScanBarcodeIcon />
+            </EmptyMedia>
+            <EmptyTitle>Scanner workflows are disabled</EmptyTitle>
+            <EmptyDescription>
+              An administrator can enable scanner workflows in Settings.
+            </EmptyDescription>
+          </EmptyHeader>
+        </Empty>
+      ) : !isMobile ? (
         <Empty>
           <EmptyHeader>
             <EmptyMedia variant="icon">
@@ -181,15 +256,9 @@ export default function Scanner({ loaderData }: Route.ComponentProps) {
                 </Button>
               </>
             ) : (
-              <>
-                <span className="text-muted-foreground text-sm">
-                  Ready when you are
-                </span>
-                <Button size="sm" onClick={startScanner}>
-                  <ScanBarcodeIcon data-icon="inline-start" />
-                  Scan code
-                </Button>
-              </>
+              <span className="text-muted-foreground text-sm">
+                Use Start capture in the top bar when you are ready.
+              </span>
             )}
           </div>
         </div>
@@ -216,6 +285,16 @@ export default function Scanner({ loaderData }: Route.ComponentProps) {
             </div>
           </div>
           <Badge variant="secondary">Saved</Badge>
+          {product && (
+            <Button
+              size="sm"
+              variant="outline"
+              disabled={addingProduct}
+              onClick={() => void addProductToInventory()}
+            >
+              {addingProduct ? "Adding…" : "Add to inventory"}
+            </Button>
+          )}
         </div>
       )}
       <section>

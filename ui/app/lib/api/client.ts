@@ -19,6 +19,10 @@ type FetchLike<T> = Promise<{
 const DEFAULT_API_BASE_URL = "http://localhost:8000";
 
 export function getApiBaseUrl() {
+  if (typeof window !== "undefined") {
+    return import.meta.env.VITE_KOMBU_API_BASE_URL ?? DEFAULT_API_BASE_URL;
+  }
+
   return process.env.KOMBU_API_BASE_URL ?? DEFAULT_API_BASE_URL;
 }
 
