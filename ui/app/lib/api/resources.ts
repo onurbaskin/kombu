@@ -34,6 +34,7 @@ export type KnownProvider = {
 };
 
 export type AiCapability = ApiSchema<"AiCapabilityRead">;
+export type FeatureFlag = ApiSchema<"FeatureFlag">;
 export type CurrentUser = ApiSchema<"CurrentUserRead">;
 export type ExpiryAlert = ApiSchema<"ExpiryAlertRead">;
 export type ImportJob = ApiSchema<"ImportJobRead">;
@@ -49,10 +50,48 @@ export type ScanSession = ApiSchema<"ScanSessionRead">;
 export type ShoppingItem = ApiSchema<"ShoppingListItemRead">;
 export type SystemOverview = ApiSchema<"SystemOverviewRead">;
 
+export type ManagedUser = {
+  id: number;
+  email: string;
+  display_name: string;
+  role: "admin" | "editor" | "viewer";
+  is_active: boolean;
+  created_at: string;
+};
+
+export type UserInvite = {
+  id: number;
+  email: string;
+  role: "admin" | "editor" | "viewer";
+  created_at: string;
+};
+
 export type ShoppingSuggestion = {
   item_name: string;
   reason: string;
   priority: string;
+  category: string;
+};
+
+export type RecipeEnhancement = {
+  title: string;
+  summary: string;
+  instructions: string;
+  tips: string[];
+  cached: boolean;
+  generated_at: string;
+};
+
+export type IngredientSuggestion = {
+  name: string;
+  available: boolean;
+  substitutions: string[];
+};
+
+export type RecipeShoppingResult = {
+  added: string[];
+  skipped_available: string[];
+  skipped_household_quantity: string[];
 };
 
 const client = createKombuClient();
@@ -116,7 +155,7 @@ const fallbackOverview: SystemOverview = {
 };
 
 const fallbackUser: CurrentUser = {
-  id: "local-admin",
+  id: 1,
   email: "admin@example.invalid",
   display_name: "Local Administrator",
   role: "owner",
@@ -402,6 +441,10 @@ export function getRecipesPaginated(params?: {
   search?: string;
   cuisine?: string;
   source_type?: string;
+  ingredient?: string;
+  max_total_minutes?: number;
+  favorites_only?: boolean;
+  has_image?: boolean;
   sort_by?: string;
   sort_order?: string;
 }): Promise<ApiResult<RecipeListResponse>> {
@@ -420,9 +463,76 @@ export function getRecipeFilters(): Promise<ApiResult<RecipeFilterValues>> {
   return withFallback(client.GET("/api/v1/recipes/filters"), {
     cuisines: [],
     source_types: ["user", "import", "web", "ai"],
+    ingredients: [],
     max_prep_minutes: null,
     max_cook_minutes: null,
   } as RecipeFilterValues);
+}
+
+async function recipeAction<T>(
+  path: string,
+  init?: RequestInit,
+): Promise<ApiResult<T | null>> {
+  try {
+    const response = await fetch(`${baseUrl}${path}`, init);
+    if (!response.ok) {
+      const payload: unknown = await response.json().catch(() => null);
+      const error =
+        typeof payload === "object" &&
+        payload !== null &&
+        "detail" in payload &&
+        typeof payload.detail === "string"
+          ? payload.detail
+          : response.statusText;
+      return { data: null, source: "fallback", error };
+    }
+    if (response.status === 204) {
+      return { data: null, source: "api" };
+    }
+    return { data: await response.json(), source: "api" };
+  } catch (error) {
+    return {
+      data: null,
+      source: "fallback",
+      error: error instanceof Error ? error.message : "Request failed.",
+    };
+  }
+}
+
+export function getRecipeEnhancement(
+  recipeId: number,
+): Promise<ApiResult<RecipeEnhancement | null>> {
+  return recipeAction<RecipeEnhancement>(
+    `/api/v1/recipes/${recipeId}/enhancement`,
+  );
+}
+
+export function enhanceRecipe(
+  recipeId: number,
+  regenerate = false,
+): Promise<ApiResult<RecipeEnhancement | null>> {
+  return recipeAction<RecipeEnhancement>(
+    `/api/v1/recipes/${recipeId}/enhancement?regenerate=${regenerate}`,
+    { method: "POST" },
+  );
+}
+
+export function suggestRecipeFromInventory(
+  recipeId: number,
+): Promise<ApiResult<IngredientSuggestion[] | null>> {
+  return recipeAction<IngredientSuggestion[]>(
+    `/api/v1/recipes/${recipeId}/inventory-suggestions`,
+    { method: "POST" },
+  );
+}
+
+export function addRecipeToShoppingList(
+  recipeId: number,
+): Promise<ApiResult<RecipeShoppingResult | null>> {
+  return recipeAction<RecipeShoppingResult>(
+    `/api/v1/recipes/${recipeId}/shopping-list`,
+    { method: "POST" },
+  );
 }
 
 export function getRecipe(id: number): Promise<ApiResult<Recipe>> {
@@ -593,6 +703,136 @@ export async function updateAiProvider(
 
 export async function deleteAiProvider(id: number): Promise<void> {
   await fetch(`${baseUrl}/api/v1/ai/providers/${id}`, { method: "DELETE" });
+}
+
+export async function updateFeatureFlag(
+  key: string,
+  enabled: boolean,
+): Promise<ApiResult<FeatureFlag>> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/system/features/${key}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return { data: await res.json(), source: "api" };
+  } catch (error) {
+    return {
+      data: {} as FeatureFlag,
+      source: "fallback",
+      error: String(error),
+    };
+  }
+}
+
+export async function updateAiCapability(
+  key: string,
+  enabled: boolean,
+): Promise<ApiResult<AiCapability>> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/ai/capabilities/${key}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ enabled }),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return { data: await res.json(), source: "api" };
+  } catch (error) {
+    return {
+      data: {} as AiCapability,
+      source: "fallback",
+      error: String(error),
+    };
+  }
+}
+
+export async function getManagedUsers(): Promise<ApiResult<ManagedUser[]>> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/users`);
+    if (!res.ok) throw new Error(await res.text());
+    return { data: await res.json(), source: "api" };
+  } catch (error) {
+    return { data: [], source: "fallback", error: String(error) };
+  }
+}
+
+export async function getUserInvites(): Promise<ApiResult<UserInvite[]>> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/users/invites`);
+    if (!res.ok) throw new Error(await res.text());
+    return { data: await res.json(), source: "api" };
+  } catch (error) {
+    return { data: [], source: "fallback", error: String(error) };
+  }
+}
+
+export async function inviteUser(body: {
+  email: string;
+  role: ManagedUser["role"];
+}): Promise<ApiResult<UserInvite>> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/users/invites`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return { data: await res.json(), source: "api" };
+  } catch (error) {
+    return { data: {} as UserInvite, source: "fallback", error: String(error) };
+  }
+}
+
+export async function updateManagedUser(
+  id: number,
+  body: { role?: ManagedUser["role"]; is_active?: boolean },
+): Promise<ApiResult<ManagedUser>> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/users/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return { data: await res.json(), source: "api" };
+  } catch (error) {
+    return {
+      data: {} as ManagedUser,
+      source: "fallback",
+      error: String(error),
+    };
+  }
+}
+
+export async function saveImportCredential(
+  sourceKey: string,
+  body: { account_name: string; secret: string },
+): Promise<
+  ApiResult<{ source_key: string; account_name: string; configured: boolean }>
+> {
+  try {
+    const res = await fetch(
+      `${baseUrl}/api/v1/imports/sources/${sourceKey}/credential`,
+      {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      },
+    );
+    if (!res.ok) throw new Error(await res.text());
+    return { data: await res.json(), source: "api" };
+  } catch (error) {
+    return {
+      data: {
+        source_key: sourceKey,
+        account_name: body.account_name,
+        configured: false,
+      },
+      source: "fallback",
+      error: String(error),
+    };
+  }
 }
 
 export async function importRecipeFromUrl(

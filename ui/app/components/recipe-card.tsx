@@ -1,4 +1,4 @@
-import { ClockIcon, ImageIcon, UsersIcon } from "lucide-react";
+import { ClockIcon, UsersIcon } from "lucide-react";
 import { Link } from "react-router";
 import { Badge } from "~/components/ui/badge";
 import { Card, CardContent, CardHeader } from "~/components/ui/card";
@@ -15,24 +15,20 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
 
   return (
     <Link to={`/recipes/${recipe.id}`}>
-      <Card className="group h-full transition-shadow hover:shadow-md overflow-hidden">
+      <Card className="group h-full overflow-hidden hover:shadow-sm">
         {imageUrl ? (
           <div className="aspect-video w-full overflow-hidden bg-muted">
             <img
               src={imageUrl}
               alt={recipe.title}
-              className="h-full w-full object-cover transition-transform group-hover:scale-105"
+              className="h-full w-full object-cover"
               loading="lazy"
               onError={(e) => {
                 (e.target as HTMLImageElement).style.display = "none";
               }}
             />
           </div>
-        ) : (
-          <div className="aspect-video w-full flex items-center justify-center bg-muted">
-            <ImageIcon className="size-8 text-muted-foreground/50" />
-          </div>
-        )}
+        ) : null}
         <CardHeader className="pb-2">
           <div className="flex items-start justify-between gap-2">
             <h3 className="font-semibold text-lg leading-tight group-hover:text-primary transition-colors line-clamp-2">

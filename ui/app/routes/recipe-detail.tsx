@@ -2,20 +2,20 @@ import {
   ArrowLeftIcon,
   ClockIcon,
   ExternalLinkIcon,
-  ImageIcon,
-  ShoppingCartIcon,
   UsersIcon,
   WandSparklesIcon,
 } from "lucide-react";
-import { useState } from "react";
 import { Link, useNavigation } from "react-router";
+import { RecipeDetailTopbar } from "~/components/recipe-detail-topbar";
 import { SourceNotice } from "~/components/source-notice";
 import { Badge } from "~/components/ui/badge";
-import { Button } from "~/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
-import { Separator } from "~/components/ui/separator";
 import { Skeleton } from "~/components/ui/skeleton";
-import { createShoppingItem, getRecipe } from "~/lib/api/resources";
+import {
+  getAiCapabilities,
+  getRecipe,
+  getRecipeEnhancement,
+} from "~/lib/api/resources";
 import type { Route } from "./+types/recipe-detail";
 
 export function meta({ data }: Route.MetaArgs) {
@@ -33,17 +33,22 @@ export async function loader({ params }: Route.LoaderArgs) {
   if (Number.isNaN(recipeId)) {
     throw new Response("Not Found", { status: 404 });
   }
-  const recipe = await getRecipe(recipeId);
-  return { recipe };
+  const [recipe, enhancement, capabilities] = await Promise.all([
+    getRecipe(recipeId),
+    getRecipeEnhancement(recipeId),
+    getAiCapabilities(),
+  ]);
+  return { recipe, enhancement, capabilities };
 }
 
+export const handle = { topbar: RecipeDetailTopbar };
+
 export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
-  const { recipe: recipeResult } = loaderData;
+  const { recipe: recipeResult, enhancement: enhancementResult } = loaderData;
   const recipe = recipeResult.data;
+  const enhancement = enhancementResult.data;
   const navigation = useNavigation();
   const isLoading = navigation.state === "loading";
-  const [isAddingToShopping, setIsAddingToShopping] = useState(false);
-  const [shoppingMessage, setShoppingMessage] = useState<string | null>(null);
 
   const imageUrl = recipe.image_url
     ? recipe.image_url.startsWith("http://") ||
@@ -102,28 +107,6 @@ export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
     );
   }
 
-  async function addIngredientsToShopping() {
-    setIsAddingToShopping(true);
-    setShoppingMessage(null);
-    const results = await Promise.all(
-      recipe.ingredients.map((ingredient) =>
-        createShoppingItem({
-          name: ingredient.name,
-          quantity: ingredient.quantity ?? 1,
-          unit: ingredient.unit,
-          category: "Recipe ingredients",
-        }),
-      ),
-    );
-    setIsAddingToShopping(false);
-    const failed = results.filter((result) => result.error).length;
-    setShoppingMessage(
-      failed
-        ? `Added ${results.length - failed} items; ${failed} could not be added.`
-        : `${results.length} ingredients added to the shopping list.`,
-    );
-  }
-
   return (
     <div className="mx-auto max-w-3xl">
       <SourceNotice results={[recipeResult]} />
@@ -147,37 +130,26 @@ export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
             }}
           />
         </div>
-      ) : (
-        <div className="mb-6 overflow-hidden rounded-xl bg-muted aspect-video flex items-center justify-center border">
-          <ImageIcon className="size-12 text-muted-foreground/50" />
-        </div>
-      )}
+      ) : null}
 
-      <div className="flex flex-wrap items-start justify-between gap-3 mb-2">
-        <h1 className="font-bold text-2xl md:text-3xl tracking-tight">
-          {recipe.is_favorite && (
-            <span
-              className="text-amber-500 mr-2"
-              role="img"
-              aria-label="Favorite"
-            >
-              ★
-            </span>
-          )}
-          {recipe.title}
-        </h1>
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge>{recipe.source_type}</Badge>
-          {recipe.cuisine && (
-            <Badge variant="secondary">{recipe.cuisine}</Badge>
-          )}
-        </div>
+      <div className="mb-3 flex flex-wrap items-center gap-2">
+        {recipe.is_favorite && <Badge variant="secondary">Favorite</Badge>}
+        <Badge>{recipe.source_type}</Badge>
+        {recipe.cuisine && <Badge variant="secondary">{recipe.cuisine}</Badge>}
       </div>
 
-      {recipe.summary && (
+      {(enhancement?.summary || recipe.summary) && (
         <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-          {recipe.summary}
+          {enhancement?.summary ?? recipe.summary}
         </p>
+      )}
+
+      {enhancement && (
+        <div className="mb-6 flex items-center gap-2 text-muted-foreground text-sm">
+          <WandSparklesIcon aria-hidden="true" />
+          AI-enhanced version cached{" "}
+          {new Date(enhancement.generated_at).toLocaleDateString()}
+        </div>
       )}
 
       <div className="flex flex-wrap gap-3 mb-8">
@@ -258,43 +230,33 @@ export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
         </Card>
       )}
 
-      {recipe.instructions && (
+      {(enhancement?.instructions || recipe.instructions) && (
         <Card className="mb-6">
           <CardHeader>
             <CardTitle>Instructions</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="prose prose-sm max-w-none text-sm leading-relaxed whitespace-pre-line">
-              {recipe.instructions}
+              {enhancement?.instructions ?? recipe.instructions}
             </div>
           </CardContent>
         </Card>
       )}
 
-      <Separator className="my-8" />
-
-      <div className="flex flex-wrap gap-3">
-        <Button variant="outline" disabled>
-          <WandSparklesIcon data-icon="inline-start" />
-          Suggest from inventory
-        </Button>
-        <Button
-          variant="outline"
-          disabled={isAddingToShopping || recipe.ingredients.length === 0}
-          onClick={() => void addIngredientsToShopping()}
-        >
-          <ShoppingCartIcon data-icon="inline-start" />
-          {isAddingToShopping ? "Adding…" : "Add to shopping list"}
-        </Button>
-        {shoppingMessage && (
-          <p
-            className="self-center text-muted-foreground text-sm"
-            role="status"
-          >
-            {shoppingMessage}
-          </p>
-        )}
-      </div>
+      {enhancement && enhancement.tips.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>Cook's notes</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ul className="flex list-disc flex-col gap-2 pl-5 text-sm">
+              {enhancement.tips.map((tip) => (
+                <li key={tip}>{tip}</li>
+              ))}
+            </ul>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

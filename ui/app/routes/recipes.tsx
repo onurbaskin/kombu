@@ -6,11 +6,13 @@ import {
   PlusIcon,
   RefreshCwIcon,
   SearchIcon,
+  SlidersHorizontalIcon,
   UploadIcon,
 } from "lucide-react";
 import { useState } from "react";
 import {
   Link,
+  useMatches,
   useNavigate,
   useNavigation,
   useRevalidator,
@@ -38,11 +40,19 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "~/components/ui/pagination";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetTrigger,
+} from "~/components/ui/sheet";
 import { Skeleton } from "~/components/ui/skeleton";
 import { Textarea } from "~/components/ui/textarea";
 import { ToggleGroup, ToggleGroupItem } from "~/components/ui/toggle-group";
 import {
   createRecipe,
+  getAiCapabilities,
   getRecipeFilters,
   getRecipesPaginated,
   importRecipeFromUrl,
@@ -54,6 +64,7 @@ export const handle = {
     const [searchParams, setSearchParams] = useSearchParams();
     const revalidator = useRevalidator();
     const navigate = useNavigate();
+    const matches = useMatches();
     const [searchValue, setSearchValue] = useState(
       searchParams.get("search") ?? "",
     );
@@ -67,6 +78,22 @@ export const handle = {
     const [newRecipeIngredients, setNewRecipeIngredients] = useState("");
     const [newRecipeError, setNewRecipeError] = useState<string | null>(null);
     const [isCreatingRecipe, setIsCreatingRecipe] = useState(false);
+    const routeData = matches
+      .map(
+        (match) =>
+          match.data as
+            | {
+                filters?: Awaited<ReturnType<typeof getRecipeFilters>>;
+                capabilities?: Awaited<ReturnType<typeof getAiCapabilities>>;
+              }
+            | undefined,
+      )
+      .find((data) => data?.filters);
+    const filters = routeData?.filters?.data;
+    const canImportFromUrl =
+      routeData?.capabilities?.data.some(
+        (item) => item.key === "recipe_enhancement" && item.enabled,
+      ) ?? false;
 
     const handleSearch = (query: string) => {
       setSearchValue(query);
@@ -140,7 +167,7 @@ export const handle = {
 
     return (
       <>
-        <div className="relative min-w-0 flex-1 max-w-md">
+        <div className="relative hidden min-w-0 max-w-md flex-1 md:block">
           <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
           <Input
             placeholder="Search recipes..."
@@ -152,6 +179,7 @@ export const handle = {
         <Button
           variant="ghost"
           size="icon"
+          className="hidden sm:inline-flex"
           onClick={() => revalidator.revalidate()}
           disabled={revalidator.state === "loading"}
         >
@@ -160,7 +188,54 @@ export const handle = {
           />
           <span className="sr-only">Refresh recipes</span>
         </Button>
-        <Button variant="outline" onClick={() => setImportOpen(true)}>
+        {filters && (
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="outline" size="icon" className="lg:hidden">
+                <SlidersHorizontalIcon />
+                <span className="sr-only">Filter recipes</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="flex flex-col p-5">
+              <SheetHeader>
+                <SheetTitle>Filter recipes</SheetTitle>
+              </SheetHeader>
+              <RecipeFilters
+                filters={filters}
+                activeFilters={{
+                  cuisine: searchParams.get("cuisine") ?? undefined,
+                  source_type: searchParams.get("source_type") ?? undefined,
+                  ingredient: searchParams.get("ingredient") ?? undefined,
+                  max_total_minutes:
+                    searchParams.get("max_total_minutes") ?? undefined,
+                  favorites_only: searchParams.get("favorites_only") === "true",
+                  has_image: searchParams.get("has_image") === "true",
+                  search: searchValue || undefined,
+                }}
+                onFilterChange={(key, value) => {
+                  const next = new URLSearchParams(searchParams);
+                  if (value) next.set(key, value);
+                  else next.delete(key);
+                  next.delete("page");
+                  setSearchParams(next, { preventScrollReset: true });
+                }}
+                onClear={() => setSearchParams(new URLSearchParams())}
+                onSearch={handleSearch}
+                searchValue={searchValue}
+              />
+            </SheetContent>
+          </Sheet>
+        )}
+        <Button
+          variant="outline"
+          onClick={() => setImportOpen(true)}
+          disabled={!canImportFromUrl}
+          title={
+            !canImportFromUrl
+              ? "Enable recipe enhancement in Settings to import from a URL"
+              : undefined
+          }
+        >
           <Link2Icon data-icon="inline-start" />
           <span className="hidden sm:inline">Import from URL</span>
           <span className="sr-only sm:hidden">Import from URL</span>
@@ -170,7 +245,7 @@ export const handle = {
           <span className="hidden sm:inline">New recipe</span>
           <span className="sr-only sm:hidden">New recipe</span>
         </Button>
-        <Button variant="outline" asChild>
+        <Button variant="outline" asChild className="hidden md:inline-flex">
           <Link to="/settings">
             <UploadIcon data-icon="inline-start" />
             <span className="hidden md:inline">Import recipes</span>
@@ -332,24 +407,39 @@ export async function loader({ request }: Route.LoaderArgs) {
   const search = url.searchParams.get("search") ?? undefined;
   const cuisine = url.searchParams.get("cuisine") ?? undefined;
   const source_type = url.searchParams.get("source_type") ?? undefined;
+  const ingredient = url.searchParams.get("ingredient") ?? undefined;
+  const maxTotalMinutes =
+    Number(url.searchParams.get("max_total_minutes")) || undefined;
+  const favoritesOnly = url.searchParams.get("favorites_only") === "true";
+  const hasImage =
+    url.searchParams.get("has_image") === "true" ? true : undefined;
   const sort_by_term = url.searchParams.get("sort_by") ?? "updated_at";
   const sort_order_term = url.searchParams.get("sort_order") ?? "desc";
   const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
 
-  const [recipesResult, filtersResult] = await Promise.all([
+  const [recipesResult, filtersResult, capabilitiesResult] = await Promise.all([
     getRecipesPaginated({
       skip: (page - 1) * PER_PAGE,
       limit: PER_PAGE,
       search,
       cuisine,
       source_type,
+      ingredient,
+      max_total_minutes: maxTotalMinutes,
+      favorites_only: favoritesOnly || undefined,
+      has_image: hasImage,
       sort_by: sort_by_term,
       sort_order: sort_order_term,
     }),
     getRecipeFilters(),
+    getAiCapabilities(),
   ]);
 
-  return { recipes: recipesResult, filters: filtersResult };
+  return {
+    recipes: recipesResult,
+    filters: filtersResult,
+    capabilities: capabilitiesResult,
+  };
 }
 
 export default function Recipes({ loaderData }: Route.ComponentProps) {
@@ -363,6 +453,11 @@ export default function Recipes({ loaderData }: Route.ComponentProps) {
   const searchValue = searchParams.get("search") ?? "";
   const activeCuisine = searchParams.get("cuisine") ?? undefined;
   const activeSourceType = searchParams.get("source_type") ?? undefined;
+  const activeIngredient = searchParams.get("ingredient") ?? undefined;
+  const activeMaxTotalMinutes =
+    searchParams.get("max_total_minutes") ?? undefined;
+  const favoritesOnly = searchParams.get("favorites_only") === "true";
+  const hasImage = searchParams.get("has_image") === "true";
   const viewMode = searchParams.get("view") ?? "grid";
 
   const totalPages = Math.max(
@@ -416,6 +511,10 @@ export default function Recipes({ loaderData }: Route.ComponentProps) {
               activeFilters={{
                 cuisine: activeCuisine,
                 source_type: activeSourceType,
+                ingredient: activeIngredient,
+                max_total_minutes: activeMaxTotalMinutes,
+                favorites_only: favoritesOnly,
+                has_image: hasImage,
                 search: searchValue || undefined,
               }}
               onFilterChange={updateParam}

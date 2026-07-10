@@ -11,6 +11,10 @@ interface RecipeFiltersProps {
   activeFilters: {
     cuisine?: string;
     source_type?: string;
+    ingredient?: string;
+    max_total_minutes?: string;
+    favorites_only?: boolean;
+    has_image?: boolean;
     search?: string;
   };
   onFilterChange: (key: string, value: string | null) => void;
@@ -28,7 +32,13 @@ export function RecipeFilters({
   searchValue,
 }: RecipeFiltersProps) {
   const hasActiveFilters =
-    activeFilters.cuisine || activeFilters.source_type || activeFilters.search;
+    activeFilters.cuisine ||
+    activeFilters.source_type ||
+    activeFilters.ingredient ||
+    activeFilters.max_total_minutes ||
+    activeFilters.favorites_only ||
+    activeFilters.has_image ||
+    activeFilters.search;
 
   return (
     <div className="flex flex-col gap-4">
@@ -74,6 +84,93 @@ export function RecipeFilters({
           <Separator />
 
           <div className="flex flex-col gap-2">
+            <span className="font-medium text-muted-foreground text-xs uppercase">
+              Ingredient
+            </span>
+            <div className="flex max-h-48 flex-col gap-1 overflow-y-auto">
+              {filters.ingredients.map((ingredient) => (
+                <label
+                  key={ingredient}
+                  htmlFor={`ingredient-${ingredient}`}
+                  className="flex cursor-pointer items-center gap-2 text-sm"
+                >
+                  <Checkbox
+                    id={`ingredient-${ingredient}`}
+                    checked={activeFilters.ingredient === ingredient}
+                    onCheckedChange={(checked) =>
+                      onFilterChange("ingredient", checked ? ingredient : null)
+                    }
+                  />
+                  <span className="truncate">{ingredient}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+
+          <Separator />
+
+          <div className="flex flex-col gap-2">
+            <span className="font-medium text-muted-foreground text-xs uppercase">
+              Total time
+            </span>
+            {[15, 30, 60, 120].map((minutes) => (
+              <label
+                key={minutes}
+                htmlFor={`time-${minutes}`}
+                className="flex cursor-pointer items-center gap-2 text-sm"
+              >
+                <Checkbox
+                  id={`time-${minutes}`}
+                  checked={activeFilters.max_total_minutes === String(minutes)}
+                  onCheckedChange={(checked) =>
+                    onFilterChange(
+                      "max_total_minutes",
+                      checked ? String(minutes) : null,
+                    )
+                  }
+                />
+                {minutes < 60
+                  ? `${minutes} minutes or less`
+                  : `${minutes / 60} hours or less`}
+              </label>
+            ))}
+          </div>
+
+          <Separator />
+
+          <div className="flex flex-col gap-2">
+            <span className="font-medium text-muted-foreground text-xs uppercase">
+              Collection
+            </span>
+            <label
+              htmlFor="favorites-only"
+              className="flex cursor-pointer items-center gap-2 text-sm"
+            >
+              <Checkbox
+                id="favorites-only"
+                checked={activeFilters.favorites_only}
+                onCheckedChange={(checked) =>
+                  onFilterChange("favorites_only", checked ? "true" : null)
+                }
+              />
+              Favorites only
+            </label>
+            <label
+              htmlFor="has-image"
+              className="flex cursor-pointer items-center gap-2 text-sm"
+            >
+              <Checkbox
+                id="has-image"
+                checked={activeFilters.has_image}
+                onCheckedChange={(checked) =>
+                  onFilterChange("has_image", checked ? "true" : null)
+                }
+              />
+              Has a photo
+            </label>
+          </div>
+
+          <div className="flex flex-col gap-2">
             <span className="font-medium text-xs uppercase text-muted-foreground tracking-wider">
               Cuisine
             </span>
@@ -113,16 +210,6 @@ export function RecipeFilters({
           </Button>
         </>
       )}
-
-      <div className="rounded-md border bg-muted/30 p-3">
-        <p className="text-xs text-muted-foreground leading-relaxed">
-          Want millions more recipes? Configure open-source recipe datasets in{" "}
-          <a href="/settings" className="underline hover:text-foreground">
-            Settings → Recipe Sources
-          </a>
-          .
-        </p>
-      </div>
     </div>
   );
 }

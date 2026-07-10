@@ -30,6 +30,20 @@
         "title": "AiCapabilityRead",
         "type": "object"
       },
+      "AiCapabilityUpdate": {
+        "description": "Administrator update for an AI capability switch.",
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "AiCapabilityUpdate",
+        "type": "object"
+      },
       "AiProviderConfigCreate": {
         "description": "Create a new AI provider configuration.",
         "properties": {
@@ -292,6 +306,24 @@
         "title": "AiSuggestionRead",
         "type": "object"
       },
+      "Body_import_photos_api_v1_inventory_import_photos_post": {
+        "properties": {
+          "photos": {
+            "description": "Inventory photos",
+            "items": {
+              "contentMediaType": "application/octet-stream",
+              "type": "string"
+            },
+            "title": "Photos",
+            "type": "array"
+          }
+        },
+        "required": [
+          "photos"
+        ],
+        "title": "Body_import_photos_api_v1_inventory_import_photos_post",
+        "type": "object"
+      },
       "CurrentUserRead": {
         "description": "Current user bootstrap response.",
         "properties": {
@@ -309,7 +341,7 @@
           },
           "id": {
             "title": "Id",
-            "type": "string"
+            "type": "integer"
           },
           "permissions": {
             "items": {
@@ -402,6 +434,20 @@
         "title": "FeatureFlag",
         "type": "object"
       },
+      "FeatureFlagUpdate": {
+        "description": "Administrator update for a persisted feature flag.",
+        "properties": {
+          "enabled": {
+            "title": "Enabled",
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "enabled"
+        ],
+        "title": "FeatureFlagUpdate",
+        "type": "object"
+      },
       "HTTPValidationError": {
         "properties": {
           "detail": {
@@ -437,6 +483,60 @@
           "version"
         ],
         "title": "HealthRead",
+        "type": "object"
+      },
+      "ImportCredentialRead": {
+        "description": "Credential status that never exposes stored secret material.",
+        "properties": {
+          "account_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Account Name"
+          },
+          "configured": {
+            "title": "Configured",
+            "type": "boolean"
+          },
+          "source_key": {
+            "title": "Source Key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "source_key",
+          "account_name",
+          "configured"
+        ],
+        "title": "ImportCredentialRead",
+        "type": "object"
+      },
+      "ImportCredentialUpdate": {
+        "description": "User-supplied account and secret for a maintainer-defined source.",
+        "properties": {
+          "account_name": {
+            "maxLength": 320,
+            "minLength": 1,
+            "title": "Account Name",
+            "type": "string"
+          },
+          "secret": {
+            "maxLength": 512,
+            "minLength": 1,
+            "title": "Secret",
+            "type": "string"
+          }
+        },
+        "required": [
+          "account_name",
+          "secret"
+        ],
+        "title": "ImportCredentialUpdate",
         "type": "object"
       },
       "ImportJobCreate": {
@@ -614,6 +714,32 @@
           "recipe_title"
         ],
         "title": "IngredientSubstitutionRequest",
+        "type": "object"
+      },
+      "IngredientSuggestionRead": {
+        "description": "Inventory match and alternatives for one recipe ingredient.",
+        "properties": {
+          "available": {
+            "title": "Available",
+            "type": "boolean"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "substitutions": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Substitutions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "name",
+          "available"
+        ],
+        "title": "IngredientSuggestionRead",
         "type": "object"
       },
       "InventoryItemCreate": {
@@ -814,6 +940,23 @@
         ],
         "title": "InventoryLocation",
         "type": "string"
+      },
+      "InventoryPhotoImportRead": {
+        "description": "Items created after analyzing uploaded inventory photos.",
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/InventoryItemRead"
+            },
+            "title": "Items",
+            "type": "array"
+          }
+        },
+        "required": [
+          "items"
+        ],
+        "title": "InventoryPhotoImportRead",
+        "type": "object"
       },
       "KnownProviderRead": {
         "description": "A known AI provider type.",
@@ -1092,6 +1235,48 @@
         "title": "RecipeEnhanceRequest",
         "type": "object"
       },
+      "RecipeEnhancementRead": {
+        "description": "Cached AI enhancement for a recipe.",
+        "properties": {
+          "cached": {
+            "title": "Cached",
+            "type": "boolean"
+          },
+          "generated_at": {
+            "format": "date-time",
+            "title": "Generated At",
+            "type": "string"
+          },
+          "instructions": {
+            "title": "Instructions",
+            "type": "string"
+          },
+          "summary": {
+            "title": "Summary",
+            "type": "string"
+          },
+          "tips": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Tips",
+            "type": "array"
+          },
+          "title": {
+            "title": "Title",
+            "type": "string"
+          }
+        },
+        "required": [
+          "title",
+          "summary",
+          "instructions",
+          "cached",
+          "generated_at"
+        ],
+        "title": "RecipeEnhancementRead",
+        "type": "object"
+      },
       "RecipeFilterValues": {
         "description": "Available filter values for the recipe listing sidebar.",
         "properties": {
@@ -1100,6 +1285,13 @@
               "type": "string"
             },
             "title": "Cuisines",
+            "type": "array"
+          },
+          "ingredients": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Ingredients",
             "type": "array"
           },
           "max_cook_minutes": {
@@ -1134,7 +1326,8 @@
         },
         "required": [
           "cuisines",
-          "source_types"
+          "source_types",
+          "ingredients"
         ],
         "title": "RecipeFilterValues",
         "type": "object"
@@ -1442,6 +1635,34 @@
           "ingredients"
         ],
         "title": "RecipeRead",
+        "type": "object"
+      },
+      "RecipeShoppingResult": {
+        "description": "Result of intelligently adding missing recipe items to shopping.",
+        "properties": {
+          "added": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Added",
+            "type": "array"
+          },
+          "skipped_available": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skipped Available",
+            "type": "array"
+          },
+          "skipped_household_quantity": {
+            "items": {
+              "type": "string"
+            },
+            "title": "Skipped Household Quantity",
+            "type": "array"
+          }
+        },
+        "title": "RecipeShoppingResult",
         "type": "object"
       },
       "RecipeSourceType": {
@@ -1878,6 +2099,52 @@
         "title": "ShoppingSuggestRequest",
         "type": "object"
       },
+      "ShoppingSuggestionRead": {
+        "description": "One context-aware proposal for the next shopping run.",
+        "properties": {
+          "category": {
+            "default": "Other",
+            "title": "Category",
+            "type": "string"
+          },
+          "item_name": {
+            "title": "Item Name",
+            "type": "string"
+          },
+          "priority": {
+            "default": "medium",
+            "title": "Priority",
+            "type": "string"
+          },
+          "reason": {
+            "title": "Reason",
+            "type": "string"
+          }
+        },
+        "required": [
+          "item_name",
+          "reason"
+        ],
+        "title": "ShoppingSuggestionRead",
+        "type": "object"
+      },
+      "ShoppingSuggestionsRead": {
+        "description": "Shopping proposals derived from the user's own kitchen activity.",
+        "properties": {
+          "suggestions": {
+            "items": {
+              "$ref": "#/components/schemas/ShoppingSuggestionRead"
+            },
+            "title": "Suggestions",
+            "type": "array"
+          }
+        },
+        "required": [
+          "suggestions"
+        ],
+        "title": "ShoppingSuggestionsRead",
+        "type": "object"
+      },
       "SystemOverviewRead": {
         "description": "Initial dashboard payload for Kombu.",
         "properties": {
@@ -1919,6 +2186,133 @@
           "navigation"
         ],
         "title": "SystemOverviewRead",
+        "type": "object"
+      },
+      "UserInviteCreate": {
+        "description": "Create a pending user invitation.",
+        "properties": {
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole",
+            "default": "viewer"
+          }
+        },
+        "required": [
+          "email"
+        ],
+        "title": "UserInviteCreate",
+        "type": "object"
+      },
+      "UserInviteRead": {
+        "description": "Pending invitation safe to display to administrators.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "role",
+          "created_at"
+        ],
+        "title": "UserInviteRead",
+        "type": "object"
+      },
+      "UserRead": {
+        "description": "Administrator-facing user summary.",
+        "properties": {
+          "created_at": {
+            "format": "date-time",
+            "title": "Created At",
+            "type": "string"
+          },
+          "display_name": {
+            "title": "Display Name",
+            "type": "string"
+          },
+          "email": {
+            "format": "email",
+            "title": "Email",
+            "type": "string"
+          },
+          "id": {
+            "title": "Id",
+            "type": "integer"
+          },
+          "is_active": {
+            "title": "Is Active",
+            "type": "boolean"
+          },
+          "role": {
+            "$ref": "#/components/schemas/UserRole"
+          }
+        },
+        "required": [
+          "id",
+          "email",
+          "display_name",
+          "role",
+          "is_active",
+          "created_at"
+        ],
+        "title": "UserRead",
+        "type": "object"
+      },
+      "UserRole": {
+        "description": "Supported user roles for the initial multi-user model.",
+        "enum": [
+          "admin",
+          "editor",
+          "viewer"
+        ],
+        "title": "UserRole",
+        "type": "string"
+      },
+      "UserUpdate": {
+        "description": "Fields an administrator can change on a user.",
+        "properties": {
+          "is_active": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Is Active"
+          },
+          "role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/UserRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "title": "UserUpdate",
         "type": "object"
       },
       "ValidationError": {
@@ -1996,6 +2390,75 @@
         ]
       }
     },
+    "/api/v1/ai/capabilities/{key}": {
+      "patch": {
+        "description": "Persist an administrator-controlled AI capability switch.",
+        "operationId": "update_capability_api_v1_ai_capabilities__key__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AiCapabilityUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AiCapabilityRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Capability",
+        "tags": [
+          "ai"
+        ]
+      }
+    },
     "/api/v1/ai/inventory/analyze-photos": {
       "post": {
         "description": "Analyze food photos to identify inventory items.",
@@ -2068,6 +2531,24 @@
       "post": {
         "description": "Add a new AI provider configuration.",
         "operationId": "create_provider_api_v1_ai_providers_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -2145,6 +2626,22 @@
               "title": "Provider Id",
               "type": "integer"
             }
+          },
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
           }
         ],
         "responses": {
@@ -2178,6 +2675,22 @@
             "schema": {
               "title": "Provider Id",
               "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
             }
           }
         ],
@@ -2471,6 +2984,24 @@
       "post": {
         "description": "Create an import job and execute it in the background.",
         "operationId": "create_job_api_v1_imports_jobs_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -2530,6 +3061,132 @@
           }
         },
         "summary": "Sources",
+        "tags": [
+          "imports"
+        ]
+      }
+    },
+    "/api/v1/imports/sources/{source_key}/credential": {
+      "get": {
+        "description": "Return whether credentials exist for a shipped recipe source.",
+        "operationId": "credential_status_api_v1_imports_sources__source_key__credential_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_key",
+            "required": true,
+            "schema": {
+              "title": "Source Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportCredentialRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Credential Status",
+        "tags": [
+          "imports"
+        ]
+      },
+      "put": {
+        "description": "Encrypt and save credentials for a maintainer-defined recipe source.",
+        "operationId": "save_credential_api_v1_imports_sources__source_key__credential_put",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "source_key",
+            "required": true,
+            "schema": {
+              "title": "Source Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ImportCredentialUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ImportCredentialRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Save Credential",
         "tags": [
           "imports"
         ]
@@ -2629,6 +3286,48 @@
         ]
       }
     },
+    "/api/v1/inventory/import-photos": {
+      "post": {
+        "description": "Analyze uploaded photos and insert the identified items into inventory.",
+        "operationId": "import_photos_api_v1_inventory_import_photos_post",
+        "requestBody": {
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_import_photos_api_v1_inventory_import_photos_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InventoryPhotoImportRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Import Photos",
+        "tags": [
+          "inventory"
+        ]
+      }
+    },
     "/api/v1/recipes": {
       "get": {
         "description": "List recipes stored in Kombu with filtering, sorting, and pagination.",
@@ -2704,6 +3403,65 @@
                 }
               ],
               "title": "Source Type"
+            }
+          },
+          {
+            "in": "query",
+            "name": "ingredient",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Ingredient"
+            }
+          },
+          {
+            "in": "query",
+            "name": "max_total_minutes",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Max Total Minutes"
+            }
+          },
+          {
+            "in": "query",
+            "name": "favorites_only",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Favorites Only",
+              "type": "boolean"
+            }
+          },
+          {
+            "in": "query",
+            "name": "has_image",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "boolean"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Has Image"
             }
           },
           {
@@ -2902,6 +3660,198 @@
         ]
       }
     },
+    "/api/v1/recipes/{recipe_id}/enhancement": {
+      "get": {
+        "description": "Return a cached AI enhancement without calling a provider.",
+        "operationId": "cached_enhancement_api_v1_recipes__recipe_id__enhancement_get",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "anyOf": [
+                    {
+                      "$ref": "#/components/schemas/RecipeEnhancementRead"
+                    },
+                    {
+                      "type": "null"
+                    }
+                  ],
+                  "title": "Response Cached Enhancement Api V1 Recipes  Recipe Id  Enhancement Get"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Cached Enhancement",
+        "tags": [
+          "recipes"
+        ]
+      },
+      "post": {
+        "description": "Generate or reuse a cached, structured recipe enhancement.",
+        "operationId": "enhance_stored_recipe_api_v1_recipes__recipe_id__enhancement_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "query",
+            "name": "regenerate",
+            "required": false,
+            "schema": {
+              "default": false,
+              "title": "Regenerate",
+              "type": "boolean"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeEnhancementRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Enhance Stored Recipe",
+        "tags": [
+          "recipes"
+        ]
+      }
+    },
+    "/api/v1/recipes/{recipe_id}/inventory-suggestions": {
+      "post": {
+        "description": "Suggest inventory-backed alternatives for missing ingredients.",
+        "operationId": "suggest_from_inventory_api_v1_recipes__recipe_id__inventory_suggestions_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/IngredientSuggestionRead"
+                  },
+                  "title": "Response Suggest From Inventory Api V1 Recipes  Recipe Id  Inventory Suggestions Post",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Suggest From Inventory",
+        "tags": [
+          "recipes"
+        ]
+      }
+    },
+    "/api/v1/recipes/{recipe_id}/shopping-list": {
+      "post": {
+        "description": "Add missing recipe ingredients in sensible shopping quantities.",
+        "operationId": "add_recipe_to_shopping_api_v1_recipes__recipe_id__shopping_list_post",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "recipe_id",
+            "required": true,
+            "schema": {
+              "title": "Recipe Id",
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RecipeShoppingResult"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Add Recipe To Shopping",
+        "tags": [
+          "recipes"
+        ]
+      }
+    },
     "/api/v1/scanner/capabilities": {
       "get": {
         "description": "Return supported scanner workflows.",
@@ -2956,6 +3906,24 @@
       "post": {
         "description": "Create a scanner session.",
         "operationId": "create_session_api_v1_scanner_sessions_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
+          }
+        ],
         "requestBody": {
           "content": {
             "application/json": {
@@ -3088,6 +4056,28 @@
         ]
       }
     },
+    "/api/v1/shopping-list/suggestions": {
+      "post": {
+        "description": "Suggest useful items from stock, expiry, recipes, and previous runs.",
+        "operationId": "suggestions_api_v1_shopping_list_suggestions_post",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ShoppingSuggestionsRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Suggestions",
+        "tags": [
+          "shopping-list"
+        ]
+      }
+    },
     "/api/v1/shopping-list/{item_id}": {
       "patch": {
         "description": "Update a shopping list item.",
@@ -3141,6 +4131,101 @@
         ]
       }
     },
+    "/api/v1/system/features": {
+      "get": {
+        "description": "Return persisted feature availability.",
+        "operationId": "features_api_v1_system_features_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/FeatureFlag"
+                  },
+                  "title": "Response Features Api V1 System Features Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Features",
+        "tags": [
+          "system"
+        ]
+      }
+    },
+    "/api/v1/system/features/{key}": {
+      "patch": {
+        "description": "Persist an administrator-controlled feature flag.",
+        "operationId": "update_feature_api_v1_system_features__key__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "key",
+            "required": true,
+            "schema": {
+              "title": "Key",
+              "type": "string"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FeatureFlagUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeatureFlag"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update Feature",
+        "tags": [
+          "system"
+        ]
+      }
+    },
     "/api/v1/system/overview": {
       "get": {
         "description": "Return initial dashboard data for the frontend.",
@@ -3185,10 +4270,246 @@
         ]
       }
     },
+    "/api/v1/users": {
+      "get": {
+        "description": "List users for administrator management.",
+        "operationId": "list_users_api_v1_users_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserRead"
+                  },
+                  "title": "Response List Users Api V1 Users Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Users",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/invites": {
+      "get": {
+        "description": "List pending invitations.",
+        "operationId": "list_invites_api_v1_users_invites_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/UserInviteRead"
+                  },
+                  "title": "Response List Invites Api V1 Users Invites Get",
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "List Invites",
+        "tags": [
+          "users"
+        ]
+      },
+      "post": {
+        "description": "Create or replace a pending local invitation.",
+        "operationId": "invite_user_api_v1_users_invites_post",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserInviteCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserInviteRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Invite User",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/invites/{invite_id}": {
+      "delete": {
+        "description": "Revoke a pending invitation.",
+        "operationId": "revoke_invite_api_v1_users_invites__invite_id__delete",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "invite_id",
+            "required": true,
+            "schema": {
+              "title": "Invite Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Revoke Invite",
+        "tags": [
+          "users"
+        ]
+      }
+    },
     "/api/v1/users/me": {
       "get": {
-        "description": "Return the current user placeholder until auth is configured.",
+        "description": "Return the resolved local user and effective permissions.",
         "operationId": "me_api_v1_users_me_get",
+        "parameters": [
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
+          }
+        ],
         "responses": {
           "200": {
             "content": {
@@ -3199,9 +4520,88 @@
               }
             },
             "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
           }
         },
         "summary": "Me",
+        "tags": [
+          "users"
+        ]
+      }
+    },
+    "/api/v1/users/{user_id}": {
+      "patch": {
+        "description": "Update a user's role or active status.",
+        "operationId": "update_user_api_v1_users__user_id__patch",
+        "parameters": [
+          {
+            "in": "path",
+            "name": "user_id",
+            "required": true,
+            "schema": {
+              "title": "User Id",
+              "type": "integer"
+            }
+          },
+          {
+            "in": "header",
+            "name": "x-kombu-user-id",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "integer"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-Kombu-User-Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            },
+            "description": "Validation Error"
+          }
+        },
+        "summary": "Update User",
         "tags": [
           "users"
         ]

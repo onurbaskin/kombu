@@ -73,6 +73,11 @@ interface RouteHandle {
   topbar?: React.ComponentType;
 }
 
+type RecipeRouteData = {
+  recipe?: { data?: { title?: string } };
+  enhancement?: { data?: { title?: string } | null };
+};
+
 export default function App() {
   const location = useLocation();
   const matches = useMatches();
@@ -86,7 +91,15 @@ export default function App() {
       ? location.pathname === "/"
       : location.pathname.startsWith(item.href),
   );
-  const pageTitle = currentNavigation?.label ?? "Kombu";
+  const recipeRouteData = [...matches]
+    .reverse()
+    .map((match) => match.data as RecipeRouteData | undefined)
+    .find((data) => data?.recipe?.data?.title);
+  const recipeTitle =
+    recipeRouteData?.enhancement?.data?.title ??
+    recipeRouteData?.recipe?.data?.title;
+  const pageTitle = recipeTitle ?? currentNavigation?.label ?? "Kombu";
+  const isRecipeDetail = Boolean(recipeTitle);
 
   return (
     <div className="min-h-screen bg-background">
@@ -142,6 +155,16 @@ export default function App() {
                         <Link to="/">Kombu</Link>
                       </BreadcrumbLink>
                     </BreadcrumbItem>
+                    {isRecipeDetail && (
+                      <>
+                        <BreadcrumbSeparator />
+                        <BreadcrumbItem>
+                          <BreadcrumbLink asChild>
+                            <Link to="/recipes">Recipes</Link>
+                          </BreadcrumbLink>
+                        </BreadcrumbItem>
+                      </>
+                    )}
                     {pageTitle !== "Dashboard" && (
                       <>
                         <BreadcrumbSeparator />
