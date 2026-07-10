@@ -1,6 +1,7 @@
 """Contract tests for photo inventory and contextual shopping workflows."""
 
 from collections.abc import Callable, Generator
+from datetime import date, timedelta
 
 from api.app.auth import get_current_user
 from api.app.database import Base, get_session
@@ -179,5 +180,88 @@ def test_shopping_suggestions_use_server_side_history(monkeypatch) -> None:
         assert response.json()["suggestions"][0]["item_name"] == "Milk"
         assert captured["previous_shopping"]
         assert captured["inventory_status"]
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_purchased_shopping_item_is_received_into_inventory_once() -> None:
+    """A purchase transition should upsert inventory without double counting."""
+    factory, override = _test_session()
+    app.dependency_overrides[get_session] = override
+    try:
+        client = TestClient(app)
+        created = client.post(
+            "/api/v1/shopping-list",
+            json={"name": "Rice", "quantity": 2, "unit": "bags"},
+        )
+        assert created.status_code == 201
+        item_id = created.json()["id"]
+
+        first = client.patch(
+            f"/api/v1/shopping-list/{item_id}",
+            json={"status": "purchased"},
+        )
+        second = client.patch(
+            f"/api/v1/shopping-list/{item_id}",
+            json={"status": "purchased"},
+        )
+
+        assert first.status_code == 200
+        assert second.status_code == 200
+        assert (
+            first.json()["linked_inventory_item_id"]
+            == second.json()["linked_inventory_item_id"]
+        )
+        with factory() as session:
+            inventory = session.query(InventoryItem).filter_by(name="Rice").one()
+            assert inventory.quantity == 2
+            assert inventory.source == "shopping-list"
+    finally:
+        app.dependency_overrides.clear()
+
+
+def test_meal_plan_occurrences_drive_planned_shopping() -> None:
+    """Recurring meal occurrences should aggregate recipe demand for shopping."""
+    factory, override = _test_session()
+    app.dependency_overrides[get_session] = override
+    try:
+        client = TestClient(app)
+        recipe = client.post(
+            "/api/v1/recipes",
+            json={
+                "title": "Planner test stew",
+                "ingredients": [
+                    {"name": "Beans", "quantity": 2, "unit": "cans"},
+                    {"name": "Herbs", "quantity": 1, "unit": "bunch"},
+                ],
+            },
+        )
+        assert recipe.status_code == 201
+        start = date.today() + timedelta(days=1)
+        series = client.post(
+            "/api/v1/meal-plans",
+            json={
+                "recipe_id": recipe.json()["id"],
+                "start_date": start.isoformat(),
+                "start_time": "18:00",
+                "repeat_frequency": "weekly",
+                "repeat_count": 3,
+            },
+        )
+        assert series.status_code == 201
+        assert len(series.json()["occurrences"]) == 3
+
+        planned = client.get(
+            "/api/v1/shopping-list/planned",
+            params={
+                "start_date": start.isoformat(),
+                "end_date": (start + timedelta(days=21)).isoformat(),
+            },
+        )
+        assert planned.status_code == 200
+        by_name = {item["name"]: item for item in planned.json()}
+        assert by_name["Beans"]["quantity"] == 6
+        assert by_name["Beans"]["occurrence_count"] == 3
+        assert by_name["Beans"]["recipe_titles"] == ["Planner test stew"]
     finally:
         app.dependency_overrides.clear()

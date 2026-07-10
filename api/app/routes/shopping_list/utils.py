@@ -3,16 +3,20 @@ from typing import TypedDict
 
 from api.app.models import (
     InventoryItem,
+    InventoryLocation,
+    MealPlanOccurrence,
+    MealPlanSeries,
     Recipe,
     ShoppingItemStatus,
     ShoppingListItem,
 )
+from api.app.routes.meal_plans.schemas import PlannedShoppingItemRead
 from api.app.routes.shopping_list.schemas import (
     ShoppingListItemCreate,
     ShoppingListItemUpdate,
 )
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 
 class ShoppingSuggestionContext(TypedDict):
@@ -22,6 +26,17 @@ class ShoppingSuggestionContext(TypedDict):
     inventory_items: list[dict[str, str]]
     planned_recipes: list[dict[str, str]]
     frequently_cooked: list[str]
+
+
+class PlannedShoppingGroup(TypedDict):
+    """Typed accumulator for meal-plan ingredient demand."""
+
+    name: str
+    quantity: float
+    unit: str | None
+    occurrence_count: int
+    recipe_titles: set[str]
+    first_needed_on: date
 
 
 def list_shopping_items(
@@ -59,11 +74,105 @@ def update_shopping_item(
     if item is None:
         return None
 
+    was_purchased = item.status == ShoppingItemStatus.PURCHASED
     for field_name, value in payload.model_dump(exclude_unset=True).items():
         setattr(item, field_name, value)
+    if not was_purchased and item.status == ShoppingItemStatus.PURCHASED:
+        receive_purchased_item(session, item)
     session.commit()
     session.refresh(item)
     return item
+
+
+def receive_purchased_item(session: Session, item: ShoppingListItem) -> InventoryItem:
+    """Upsert a purchased item into pantry inventory exactly once per transition."""
+    existing = session.scalar(
+        select(InventoryItem).where(
+            func.lower(InventoryItem.name) == item.name.casefold(),
+            InventoryItem.unit == item.unit,
+            InventoryItem.location == InventoryLocation.PANTRY,
+        )
+    )
+    if existing is None:
+        existing = InventoryItem(
+            name=item.name,
+            quantity=item.quantity,
+            unit=item.unit,
+            location=InventoryLocation.PANTRY,
+            source="shopping-list",
+        )
+        session.add(existing)
+        session.flush()
+    else:
+        existing.quantity += item.quantity
+        existing.source = "shopping-list"
+    item.linked_inventory_item_id = existing.id
+    return existing
+
+
+def list_planned_shopping(
+    session: Session, start_date: date, end_date: date
+) -> list[PlannedShoppingItemRead]:
+    """Aggregate ingredients required by meals scheduled in a date window."""
+    occurrences = session.scalars(
+        select(MealPlanOccurrence)
+        .join(MealPlanSeries)
+        .options(
+            selectinload(MealPlanOccurrence.series)
+            .selectinload(MealPlanSeries.recipe)
+            .selectinload(Recipe.ingredients)
+        )
+        .where(
+            MealPlanOccurrence.occurrence_date >= start_date,
+            MealPlanOccurrence.occurrence_date <= end_date,
+        )
+    ).all()
+    existing_names = {
+        name.casefold()
+        for name in session.scalars(
+            select(ShoppingListItem.name).where(
+                ShoppingListItem.status == ShoppingItemStatus.NEEDED
+            )
+        ).all()
+    }
+    grouped: dict[tuple[str, str], PlannedShoppingGroup] = {}
+    for occurrence in occurrences:
+        recipe = occurrence.series.recipe
+        for ingredient in recipe.ingredients:
+            unit = ingredient.unit or ""
+            key = (ingredient.name.casefold(), unit.casefold())
+            group = grouped.setdefault(
+                key,
+                {
+                    "name": ingredient.name,
+                    "quantity": 0.0,
+                    "unit": ingredient.unit,
+                    "occurrence_count": 0,
+                    "recipe_titles": set(),
+                    "first_needed_on": occurrence.occurrence_date,
+                },
+            )
+            group["quantity"] += ingredient.quantity or 1
+            group["occurrence_count"] += 1
+            group["recipe_titles"].add(recipe.title)
+            group["first_needed_on"] = min(
+                group["first_needed_on"], occurrence.occurrence_date
+            )
+    return [
+        PlannedShoppingItemRead(
+            name=group["name"],
+            quantity=group["quantity"],
+            unit=group["unit"],
+            occurrence_count=group["occurrence_count"],
+            recipe_titles=sorted(group["recipe_titles"]),
+            first_needed_on=group["first_needed_on"],
+            already_needed=group["name"].casefold() in existing_names,
+        )
+        for group in sorted(
+            grouped.values(),
+            key=lambda value: (value["first_needed_on"], value["name"]),
+        )
+    ]
 
 
 def build_shopping_suggestion_context(session: Session) -> ShoppingSuggestionContext:

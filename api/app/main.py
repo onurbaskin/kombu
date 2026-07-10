@@ -7,6 +7,7 @@ from api.app.routes.alerts.endpoints import router as alerts_router
 from api.app.routes.health.endpoints import router as health_router
 from api.app.routes.imports.endpoints import router as imports_router
 from api.app.routes.inventory.endpoints import router as inventory_router
+from api.app.routes.meal_plans.endpoints import router as meal_plans_router
 from api.app.routes.recipes.endpoints import router as recipes_router
 from api.app.routes.scanner.endpoints import router as scanner_router
 from api.app.routes.shopping_list.endpoints import router as shopping_list_router
@@ -39,6 +40,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     app.include_router(users_router, prefix=app_settings.api_prefix)
     app.include_router(recipes_router, prefix=app_settings.api_prefix)
     app.include_router(inventory_router, prefix=app_settings.api_prefix)
+    app.include_router(meal_plans_router, prefix=app_settings.api_prefix)
     app.include_router(shopping_list_router, prefix=app_settings.api_prefix)
     app.include_router(alerts_router, prefix=app_settings.api_prefix)
     app.include_router(imports_router, prefix=app_settings.api_prefix)

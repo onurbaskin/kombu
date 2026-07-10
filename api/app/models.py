@@ -183,6 +183,20 @@ class Recipe(Base):
         cascade="all, delete-orphan",
         order_by="RecipeIngredient.position",
     )
+    images: Mapped[list["RecipeImage"]] = relationship(
+        back_populates="recipe",
+        cascade="all, delete-orphan",
+        order_by="RecipeImage.created_at.desc()",
+    )
+    versions: Mapped[list["RecipeVersion"]] = relationship(
+        back_populates="recipe",
+        cascade="all, delete-orphan",
+        order_by="RecipeVersion.created_at.desc()",
+    )
+    meal_plan_series: Mapped[list["MealPlanSeries"]] = relationship(
+        back_populates="recipe",
+        cascade="all, delete-orphan",
+    )
 
 
 class RecipeIngredient(Base):
@@ -199,6 +213,94 @@ class RecipeIngredient(Base):
     position: Mapped[int] = mapped_column(default=0)
 
     recipe: Mapped[Recipe] = relationship(back_populates="ingredients")
+
+
+class RecipeImage(Base):
+    """AI-generated image cached for a recipe."""
+
+    __tablename__ = "recipe_images"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    recipe_id: Mapped[int] = mapped_column(ForeignKey("recipes.id", ondelete="CASCADE"))
+    prompt: Mapped[str] = mapped_column(Text)
+    image_url: Mapped[str] = mapped_column(Text)
+    provider: Mapped[str] = mapped_column(String(80))
+    model: Mapped[str] = mapped_column(String(160))
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True),
+        server_default=func.now(),
+    )
+
+    recipe: Mapped[Recipe] = relationship(back_populates="images")
+
+
+class RecipeVersion(Base):
+    """A complete editable snapshot of a recipe."""
+
+    __tablename__ = "recipe_versions"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    recipe_id: Mapped[int] = mapped_column(ForeignKey("recipes.id", ondelete="CASCADE"))
+    version_type: Mapped[str] = mapped_column(String(40), default="manual")
+    title: Mapped[str] = mapped_column(String(240))
+    summary: Mapped[str | None] = mapped_column(Text, nullable=True)
+    image_url: Mapped[str | None] = mapped_column(String(2048), nullable=True)
+    instructions: Mapped[str | None] = mapped_column(Text, nullable=True)
+    ingredients_json: Mapped[str] = mapped_column(Text, default="[]")
+    cuisine: Mapped[str | None] = mapped_column(String(120), nullable=True)
+    yield_servings: Mapped[int | None] = mapped_column(nullable=True)
+    prep_minutes: Mapped[int | None] = mapped_column(nullable=True)
+    cook_minutes: Mapped[int | None] = mapped_column(nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+    recipe: Mapped[Recipe] = relationship(back_populates="versions")
+
+
+class MealPlanSeries(Base):
+    """Recurring or one-time schedule definition for a recipe."""
+
+    __tablename__ = "meal_plan_series"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    recipe_id: Mapped[int] = mapped_column(ForeignKey("recipes.id", ondelete="CASCADE"))
+    start_date: Mapped[date] = mapped_column(index=True)
+    start_time: Mapped[str] = mapped_column(String(5), default="18:00")
+    duration_minutes: Mapped[int] = mapped_column(default=30)
+    repeat_frequency: Mapped[str] = mapped_column(String(20), default="once")
+    repeat_interval: Mapped[int] = mapped_column(default=1)
+    repeat_count: Mapped[int | None] = mapped_column(nullable=True)
+    repeat_until: Mapped[date | None] = mapped_column(nullable=True)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+    recipe: Mapped[Recipe] = relationship(back_populates="meal_plan_series")
+    occurrences: Mapped[list["MealPlanOccurrence"]] = relationship(
+        back_populates="series",
+        cascade="all, delete-orphan",
+        order_by="MealPlanOccurrence.occurrence_date, MealPlanOccurrence.start_time",
+    )
+
+
+class MealPlanOccurrence(Base):
+    """Materialized occurrence that can be removed without deleting its series."""
+
+    __tablename__ = "meal_plan_occurrences"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    series_id: Mapped[int] = mapped_column(
+        ForeignKey("meal_plan_series.id", ondelete="CASCADE"), index=True
+    )
+    occurrence_date: Mapped[date] = mapped_column(index=True)
+    start_time: Mapped[str] = mapped_column(String(5))
+    duration_minutes: Mapped[int] = mapped_column(default=30)
+
+    series: Mapped[MealPlanSeries] = relationship(back_populates="occurrences")
 
 
 class InventoryItem(Base):

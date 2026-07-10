@@ -1,8 +1,10 @@
+from datetime import date, timedelta
 from typing import Annotated
 
 from api.app.auth import require_permission
 from api.app.database import get_session
-from api.app.models import ShoppingItemStatus, User
+from api.app.models import ShoppingItemStatus, ShoppingListItem, User
+from api.app.routes.meal_plans.schemas import PlannedShoppingItemRead
 from api.app.routes.shopping_list.schemas import (
     ShoppingListItemCreate,
     ShoppingListItemRead,
@@ -12,6 +14,7 @@ from api.app.routes.shopping_list.schemas import (
 from api.app.routes.shopping_list.utils import (
     build_shopping_suggestion_context,
     create_shopping_item,
+    list_planned_shopping,
     list_shopping_items,
     update_shopping_item,
 )
@@ -49,6 +52,23 @@ def create(
     return ShoppingListItemRead.model_validate(item)
 
 
+@router.get("/planned", response_model=list[PlannedShoppingItemRead])
+def planned(
+    session: SessionDep,
+    start_date: date | None = None,
+    end_date: date | None = None,
+) -> list[PlannedShoppingItemRead]:
+    """Return ingredient demand created by scheduled meals."""
+    start = start_date or date.today()
+    end = end_date or (start + timedelta(days=30))
+    if end < start or (end - start).days > 366:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail="Shopping planning windows must be between 0 and 366 days.",
+        )
+    return list_planned_shopping(session, start, end)
+
+
 @router.patch("/{item_id}", response_model=ShoppingListItemRead)
 def update(
     item_id: int,
@@ -63,6 +83,18 @@ def update(
             status_code=status.HTTP_404_NOT_FOUND, detail="Item not found."
         )
     return ShoppingListItemRead.model_validate(item)
+
+
+@router.delete("/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove(item_id: int, session: SessionDep, _editor: WriteDep) -> None:
+    """Delete a shopping list item."""
+    item = session.get(ShoppingListItem, item_id)
+    if item is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Item not found."
+        )
+    session.delete(item)
+    session.commit()
 
 
 @router.post(
