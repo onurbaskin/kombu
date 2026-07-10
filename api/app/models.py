@@ -10,9 +10,8 @@ from api.app.database import Base
 class UserRole(StrEnum):
     """Supported user roles for the initial multi-user model."""
 
-    OWNER = "owner"
     ADMIN = "admin"
-    MEMBER = "member"
+    EDITOR = "editor"
     VIEWER = "viewer"
 
 
@@ -85,7 +84,8 @@ class User(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
     display_name: Mapped[str] = mapped_column(String(160))
-    role: Mapped[UserRole] = mapped_column(String(40), default=UserRole.OWNER)
+    role: Mapped[UserRole] = mapped_column(String(40), default=UserRole.VIEWER)
+    is_active: Mapped[bool] = mapped_column(default=True)
     organization_id: Mapped[int | None] = mapped_column(
         ForeignKey("organizations.id"),
         nullable=True,
@@ -96,6 +96,51 @@ class User(Base):
     )
 
     organization: Mapped[Organization | None] = relationship(back_populates="users")
+
+
+class UserInvite(Base):
+    """Pending invitation issued by an administrator."""
+
+    __tablename__ = "user_invites"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    email: Mapped[str] = mapped_column(String(320), unique=True, index=True)
+    role: Mapped[UserRole] = mapped_column(String(40), default=UserRole.VIEWER)
+    invited_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    accepted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+
+
+class AppSetting(Base):
+    """Persisted deployment setting controlled from the administrator UI."""
+
+    __tablename__ = "app_settings"
+
+    key: Mapped[str] = mapped_column(String(120), primary_key=True)
+    value: Mapped[str] = mapped_column(Text)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class IntegrationCredential(Base):
+    """Encrypted user credential for a maintainer-defined integration."""
+
+    __tablename__ = "integration_credentials"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    integration_key: Mapped[str] = mapped_column(String(120), unique=True, index=True)
+    encrypted_secret: Mapped[str] = mapped_column(Text)
+    account_name: Mapped[str | None] = mapped_column(String(320), nullable=True)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
 
 
 class Recipe(Base):
