@@ -1,13 +1,18 @@
+import asyncio
+import base64
+import binascii
 import html
 import ipaddress
 import json
 import re
 import socket
+import uuid
 from typing import Annotated
-from urllib.parse import urljoin, urlsplit
+from urllib.parse import quote, urljoin, urlsplit
 
 import httpx
 from api.app.auth import require_permission
+from api.app.config import get_settings
 from api.app.database import get_session
 from api.app.models import RecipeSourceType
 from api.app.routes.recipes.schemas import (
@@ -15,22 +20,36 @@ from api.app.routes.recipes.schemas import (
     RecipeCreate,
     RecipeEnhancementRead,
     RecipeFilterValues,
+    RecipeImageGenerateRequest,
+    RecipeImageRead,
+    RecipeIngredientCreate,
     RecipeListResponse,
     RecipeRead,
     RecipeShoppingResult,
+    RecipeUpdate,
+    RecipeVersionRead,
+    RecipeVersionUpdate,
 )
 from api.app.routes.recipes.utils import (
     add_missing_recipe_items,
     cache_recipe_enhancement,
     count_recipes,
     create_recipe,
+    create_recipe_image,
+    create_recipe_version,
     get_filter_values,
     get_recipe,
+    get_recipe_version,
     inventory_context,
     latest_recipe_enhancement,
+    list_recipe_versions,
     list_recipes,
+    recipe_version_read,
+    update_recipe,
+    update_recipe_version,
 )
 from api.app.runtime_settings import require_setting
+from api.app.storage import get_blob_store
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
@@ -200,6 +219,34 @@ def create(payload: RecipeCreate, session: SessionDep, _user: WriteDep) -> Recip
     return RecipeRead.model_validate(recipe)
 
 
+@router.patch("/{recipe_id}", response_model=RecipeRead)
+def update(
+    recipe_id: int,
+    payload: RecipeUpdate,
+    session: SessionDep,
+    _user: WriteDep,
+) -> RecipeRead:
+    """Update a recipe and optionally replace its ingredient lines."""
+    recipe = get_recipe(session, recipe_id)
+    if recipe is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found."
+        )
+    return RecipeRead.model_validate(update_recipe(session, recipe, payload))
+
+
+@router.delete("/{recipe_id}", status_code=status.HTTP_204_NO_CONTENT)
+def remove(recipe_id: int, session: SessionDep, _user: WriteDep) -> None:
+    """Delete a recipe and its child rows."""
+    recipe = get_recipe(session, recipe_id)
+    if recipe is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found."
+        )
+    session.delete(recipe)
+    session.commit()
+
+
 @router.get("/filters", response_model=RecipeFilterValues)
 def filter_values(session: SessionDep) -> RecipeFilterValues:
     """Return distinct filter values for the recipe listing."""
@@ -215,6 +262,120 @@ def show(recipe_id: int, session: SessionDep) -> RecipeRead:
             status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found."
         )
     return RecipeRead.model_validate(recipe)
+
+
+@router.get("/{recipe_id}/versions", response_model=list[RecipeVersionRead])
+def versions(recipe_id: int, session: SessionDep) -> list[RecipeVersionRead]:
+    """List the original recipe and all editable generated snapshots."""
+    recipe = get_recipe(session, recipe_id)
+    if recipe is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found."
+        )
+    return list_recipe_versions(session, recipe)
+
+
+@router.get("/{recipe_id}/versions/{version_id}", response_model=RecipeVersionRead)
+def show_version(
+    recipe_id: int, version_id: int, session: SessionDep
+) -> RecipeVersionRead:
+    """Return one stored recipe snapshot."""
+    if get_recipe(session, recipe_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found."
+        )
+    version = get_recipe_version(session, recipe_id, version_id)
+    if version is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recipe version not found."
+        )
+    return recipe_version_read(version)
+
+
+@router.patch("/{recipe_id}/versions/{version_id}", response_model=RecipeVersionRead)
+def update_version(
+    recipe_id: int,
+    version_id: int,
+    payload: RecipeVersionUpdate,
+    session: SessionDep,
+    _user: WriteDep,
+) -> RecipeVersionRead:
+    """Edit a generated recipe snapshot."""
+    version = get_recipe_version(session, recipe_id, version_id)
+    if version is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recipe version not found."
+        )
+    return recipe_version_read(update_recipe_version(session, version, payload))
+
+
+@router.delete(
+    "/{recipe_id}/versions/{version_id}", status_code=status.HTTP_204_NO_CONTENT
+)
+def delete_version(
+    recipe_id: int, version_id: int, session: SessionDep, _user: WriteDep
+) -> None:
+    """Delete one generated recipe snapshot."""
+    version = get_recipe_version(session, recipe_id, version_id)
+    if version is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recipe version not found."
+        )
+    session.delete(version)
+    session.commit()
+
+
+@router.post("/{recipe_id}/images", response_model=RecipeImageRead)
+async def generate_image(
+    recipe_id: int,
+    payload: RecipeImageGenerateRequest,
+    session: SessionDep,
+    _user: WriteDep,
+    _ai_enabled: Annotated[None, Depends(require_setting("feature.ai"))] = None,
+    _capability_enabled: Annotated[
+        None, Depends(require_setting("ai.recipe_image_generation"))
+    ] = None,
+) -> RecipeImageRead:
+    """Generate and cache a recipe image using the configured image provider."""
+    from api.app.services.ai import generate_recipe_image
+
+    recipe = get_recipe(session, recipe_id)
+    if recipe is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found."
+        )
+    try:
+        generated = await generate_recipe_image(
+            recipe_title=recipe.title,
+            recipe_summary=recipe.summary,
+            recipe_ingredients=[ingredient.name for ingredient in recipe.ingredients],
+            recipe_instructions=recipe.instructions,
+            custom_prompt=payload.prompt,
+        )
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE, detail=str(exc)
+        ) from exc
+    image_url = generated.get("image_url", "")
+    try:
+        header, encoded = image_url.split(",", maxsplit=1)
+        media_type = header.removeprefix("data:").split(";", maxsplit=1)[0]
+        image_bytes = base64.b64decode(encoded, validate=True)
+    except (ValueError, UnicodeError, binascii.Error) as exc:
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail="Image provider returned an invalid image payload.",
+        ) from exc
+
+    extension = media_type.removeprefix("image/") or "jpeg"
+    blob_key = f"recipe-images/{recipe_id}/{uuid.uuid4().hex}.{extension}"
+    await asyncio.to_thread(get_blob_store().put, blob_key, image_bytes, media_type)
+    settings = get_settings()
+    generated["image_url"] = (
+        f"{settings.public_web_url.rstrip('/')}/blobs/{quote(blob_key, safe='/')}"
+    )
+    image = create_recipe_image(session, recipe_id, **generated)
+    return RecipeImageRead.model_validate(image)
 
 
 @router.get(
@@ -283,7 +444,25 @@ async def enhance_stored_recipe(
             status_code=status.HTTP_502_BAD_GATEWAY,
             detail=generated.get("error", "AI provider could not enhance this recipe."),
         )
+    version = create_recipe_version(
+        session,
+        recipe,
+        version_type="ai",
+        title=generated.title,
+        summary=generated.summary,
+        instructions=generated.instructions,
+        ingredients=[
+            RecipeIngredientCreate(
+                name=ingredient.name,
+                quantity=ingredient.quantity,
+                unit=ingredient.unit,
+                note=ingredient.note,
+            )
+            for ingredient in recipe.ingredients
+        ],
+    )
     payload = generated.model_dump()
+    payload["version_id"] = version.id
     record = cache_recipe_enhancement(session, recipe_id, payload)
     return RecipeEnhancementRead(
         **payload, cached=False, generated_at=record.created_at

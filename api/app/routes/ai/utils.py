@@ -33,6 +33,15 @@ def list_ai_capabilities(session: Session) -> list[AiCapabilityRead]:
             description="Polish and structure recipes with AI-driven formatting.",
         ),
         AiCapabilityRead(
+            key="recipe_image_generation",
+            label="Recipe image generation",
+            enabled=ai_gated
+            and is_setting_enabled(session, "ai.recipe_image_generation", False),
+            description=(
+                "Generate and cache an editorial image from full recipe details."
+            ),
+        ),
+        AiCapabilityRead(
             key="inventory_substitutions",
             label="Ingredient substitutions",
             enabled=ai_gated

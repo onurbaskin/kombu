@@ -8,11 +8,20 @@ from api.app.models import (
     AiSuggestion,
     InventoryItem,
     Recipe,
+    RecipeImage,
     RecipeIngredient,
     RecipeSourceType,
+    RecipeVersion,
     ShoppingListItem,
 )
-from api.app.routes.recipes.schemas import RecipeCreate, RecipeFilterValues
+from api.app.routes.recipes.schemas import (
+    RecipeCreate,
+    RecipeFilterValues,
+    RecipeIngredientCreate,
+    RecipeUpdate,
+    RecipeVersionRead,
+    RecipeVersionUpdate,
+)
 from sqlalchemy import Select, exists, func, select
 from sqlalchemy.orm import Session, selectinload
 
@@ -46,8 +55,11 @@ def normalize_ingredient_filter(name: str) -> str:
 
 
 def recipe_with_ingredients() -> Select[tuple[Recipe]]:
-    """Build a recipe select that includes ingredient rows."""
-    return select(Recipe).options(selectinload(Recipe.ingredients))
+    """Build a recipe select that includes child rows."""
+    return select(Recipe).options(
+        selectinload(Recipe.ingredients),
+        selectinload(Recipe.images),
+    )
 
 
 def _apply_filters(
@@ -181,6 +193,175 @@ def create_recipe(session: Session, payload: RecipeCreate) -> Recipe:
         msg = "Recipe was not found after creation."
         raise RuntimeError(msg)
     return stored_recipe
+
+
+def update_recipe(session: Session, recipe: Recipe, payload: RecipeUpdate) -> Recipe:
+    """Apply a partial recipe update, replacing ingredients when supplied."""
+    update_data = payload.model_dump(exclude_unset=True, exclude={"ingredients"})
+    for key, value in update_data.items():
+        setattr(recipe, key, value)
+
+    if "ingredients" in payload.model_fields_set:
+        recipe.ingredients.clear()
+        session.flush()
+        for position, ingredient in enumerate(payload.ingredients or []):
+            recipe.ingredients.append(
+                RecipeIngredient(position=position, **ingredient.model_dump())
+            )
+
+    session.add(recipe)
+    session.commit()
+    stored_recipe = get_recipe(session, recipe.id)
+    if stored_recipe is None:
+        msg = "Recipe was not found after update."
+        raise RuntimeError(msg)
+    return stored_recipe
+
+
+def create_recipe_image(
+    session: Session,
+    recipe_id: int,
+    *,
+    prompt: str,
+    image_url: str,
+    provider: str,
+    model: str,
+) -> RecipeImage:
+    """Persist a generated image so recipe views do not regenerate it."""
+    record = RecipeImage(
+        recipe_id=recipe_id,
+        prompt=prompt,
+        image_url=image_url,
+        provider=provider,
+        model=model,
+    )
+    session.add(record)
+    session.commit()
+    session.refresh(record)
+    return record
+
+
+def original_recipe_version(recipe: Recipe) -> RecipeVersionRead:
+    """Expose the mutable recipe row as the stable original version."""
+    return RecipeVersionRead(
+        id=0,
+        recipe_id=recipe.id,
+        version_type="original",
+        title=recipe.title,
+        summary=recipe.summary,
+        image_url=recipe.image_url,
+        instructions=recipe.instructions,
+        cuisine=recipe.cuisine,
+        yield_servings=recipe.yield_servings,
+        prep_minutes=recipe.prep_minutes,
+        cook_minutes=recipe.cook_minutes,
+        ingredients=[
+            RecipeIngredientCreate(
+                name=item.name,
+                quantity=item.quantity,
+                unit=item.unit,
+                note=item.note,
+            )
+            for item in recipe.ingredients
+        ],
+        created_at=recipe.created_at,
+        updated_at=recipe.updated_at,
+    )
+
+
+def recipe_version_read(version: RecipeVersion) -> RecipeVersionRead:
+    """Convert a stored JSON ingredient snapshot to the public version shape."""
+    return RecipeVersionRead(
+        id=version.id,
+        recipe_id=version.recipe_id,
+        version_type=version.version_type,
+        title=version.title,
+        summary=version.summary,
+        image_url=version.image_url,
+        instructions=version.instructions,
+        cuisine=version.cuisine,
+        yield_servings=version.yield_servings,
+        prep_minutes=version.prep_minutes,
+        cook_minutes=version.cook_minutes,
+        ingredients=[
+            RecipeIngredientCreate.model_validate(item)
+            for item in json.loads(version.ingredients_json)
+        ],
+        created_at=version.created_at,
+        updated_at=version.updated_at,
+    )
+
+
+def list_recipe_versions(session: Session, recipe: Recipe) -> list[RecipeVersionRead]:
+    """Return the original plus all generated/manual snapshots."""
+    stored = list(
+        session.scalars(
+            select(RecipeVersion)
+            .where(RecipeVersion.recipe_id == recipe.id)
+            .order_by(RecipeVersion.created_at.desc())
+        ).all()
+    )
+    return [
+        original_recipe_version(recipe),
+        *(recipe_version_read(item) for item in stored),
+    ]
+
+
+def create_recipe_version(
+    session: Session,
+    recipe: Recipe,
+    *,
+    version_type: str,
+    title: str,
+    summary: str | None,
+    instructions: str | None,
+    ingredients: list[RecipeIngredientCreate],
+) -> RecipeVersion:
+    """Persist a complete snapshot for navigation and later editing."""
+    version = RecipeVersion(
+        recipe_id=recipe.id,
+        version_type=version_type,
+        title=title,
+        summary=summary,
+        image_url=recipe.image_url,
+        instructions=instructions,
+        ingredients_json=json.dumps([item.model_dump() for item in ingredients]),
+        cuisine=recipe.cuisine,
+        yield_servings=recipe.yield_servings,
+        prep_minutes=recipe.prep_minutes,
+        cook_minutes=recipe.cook_minutes,
+    )
+    session.add(version)
+    session.commit()
+    session.refresh(version)
+    return version
+
+
+def get_recipe_version(
+    session: Session, recipe_id: int, version_id: int
+) -> RecipeVersion | None:
+    """Load a stored version, excluding the virtual original id zero."""
+    return session.scalar(
+        select(RecipeVersion).where(
+            RecipeVersion.id == version_id, RecipeVersion.recipe_id == recipe_id
+        )
+    )
+
+
+def update_recipe_version(
+    session: Session, version: RecipeVersion, payload: RecipeVersionUpdate
+) -> RecipeVersion:
+    """Update a stored snapshot without changing the original recipe row."""
+    values = payload.model_dump(exclude_unset=True, exclude={"ingredients"})
+    for key, value in values.items():
+        setattr(version, key, value)
+    if "ingredients" in payload.model_fields_set:
+        version.ingredients_json = json.dumps(
+            [item.model_dump() for item in payload.ingredients or []]
+        )
+    session.commit()
+    session.refresh(version)
+    return version
 
 
 def get_filter_values(session: Session) -> RecipeFilterValues:

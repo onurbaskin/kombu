@@ -38,6 +38,75 @@ class RecipeCreate(BaseModel):
     ingredients: list[RecipeIngredientCreate] = Field(default_factory=list)
 
 
+class RecipeUpdate(BaseModel):
+    """Partial recipe update request."""
+
+    title: str | None = Field(default=None, min_length=1, max_length=240)
+    summary: str | None = None
+    image_url: str | None = Field(default=None, max_length=2048)
+    instructions: str | None = None
+    source_url: str | None = Field(default=None, max_length=1024)
+    source_type: RecipeSourceType | None = None
+    cuisine: str | None = Field(default=None, max_length=120)
+    yield_servings: int | None = Field(default=None, ge=1)
+    prep_minutes: int | None = Field(default=None, ge=0)
+    cook_minutes: int | None = Field(default=None, ge=0)
+    is_favorite: bool | None = None
+    ingredients: list[RecipeIngredientCreate] | None = None
+
+
+class RecipeImageRead(BaseModel):
+    """Cached generated image for a recipe."""
+
+    id: int
+    prompt: str
+    image_url: str
+    provider: str
+    model: str
+    created_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RecipeImageGenerateRequest(BaseModel):
+    """Optional custom prompt for a generated recipe image."""
+
+    prompt: str | None = Field(default=None, max_length=2000)
+
+
+class RecipeVersionRead(BaseModel):
+    """A complete recipe snapshot, including the virtual original version."""
+
+    id: int
+    recipe_id: int
+    version_type: str
+    title: str
+    summary: str | None
+    image_url: str | None
+    instructions: str | None
+    cuisine: str | None
+    yield_servings: int | None
+    prep_minutes: int | None
+    cook_minutes: int | None
+    ingredients: list[RecipeIngredientCreate] = Field(default_factory=list)
+    created_at: datetime
+    updated_at: datetime
+    model_config = ConfigDict(from_attributes=True)
+
+
+class RecipeVersionUpdate(BaseModel):
+    """Editable fields for a stored recipe version."""
+
+    title: str | None = Field(default=None, min_length=1, max_length=240)
+    summary: str | None = None
+    image_url: str | None = Field(default=None, max_length=2048)
+    instructions: str | None = None
+    cuisine: str | None = Field(default=None, max_length=120)
+    yield_servings: int | None = Field(default=None, ge=1)
+    prep_minutes: int | None = Field(default=None, ge=0)
+    cook_minutes: int | None = Field(default=None, ge=0)
+    ingredients: list[RecipeIngredientCreate] | None = None
+
+
 class RecipeRead(BaseModel):
     """Recipe response with ingredients."""
 
@@ -56,6 +125,7 @@ class RecipeRead(BaseModel):
     created_at: datetime
     updated_at: datetime
     ingredients: list[RecipeIngredientRead]
+    images: list[RecipeImageRead] = Field(default_factory=list)
     model_config = ConfigDict(from_attributes=True)
 
 
@@ -89,6 +159,7 @@ class RecipeEnhancementRead(BaseModel):
     tips: list[str] = Field(default_factory=list)
     cached: bool
     generated_at: datetime
+    version_id: int | None = None
 
 
 class IngredientSuggestionRead(BaseModel):

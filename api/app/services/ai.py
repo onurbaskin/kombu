@@ -7,9 +7,9 @@ import json
 import logging
 from datetime import date
 
+import httpx
 from litellm import completion as litellm_completion
-from litellm.exceptions import APIError as LiteLLMAPIError
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ValidationError, field_validator
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -68,6 +68,14 @@ class EnhancedRecipe(BaseModel):
     instructions: str
     tips: list[str] = Field(default_factory=list)
 
+    @field_validator("instructions", mode="before")
+    @classmethod
+    def normalize_instructions(cls, value: object) -> str:
+        """Accept providers that return numbered steps as a JSON list."""
+        if isinstance(value, list):
+            return "\n".join(str(item) for item in value)
+        return str(value)
+
 
 class PhotoInventoryItem(BaseModel):
     """Inventory item identified in one or more kitchen photos."""
@@ -109,15 +117,27 @@ class ImportedWebRecipe(BaseModel):
     ingredients: list[ImportedRecipeIngredient] = Field(default_factory=list)
 
 
-def _get_active_provider(session: Session) -> AiProviderConfig | None:
-    """Return the first enabled AI provider config."""
+def _get_active_provider(
+    session: Session, *, image_capable: bool = False
+) -> AiProviderConfig | None:
+    """Return the first enabled provider, optionally preferring image models."""
     stmt = (
         select(AiProviderConfig)
         .where(AiProviderConfig.is_enabled.is_(True))
         .order_by(AiProviderConfig.created_at.asc())
-        .limit(1)
     )
-    return session.scalars(stmt).first()
+    configs = list(session.scalars(stmt).all())
+    if image_capable:
+        return next(
+            (
+                config
+                for config in configs
+                if config.provider == "openrouter"
+                or "image" in config.default_model.casefold()
+            ),
+            None,
+        )
+    return configs[0] if configs else None
 
 
 def _get_client_kwargs(config: AiProviderConfig) -> dict:
@@ -161,9 +181,23 @@ async def _call_llm(
         try:
             response = await asyncio.to_thread(litellm_completion, **kwargs)  # type: ignore[arg-type]
             return response.choices[0].message.content or ""
-        except LiteLLMAPIError as e:
-            logger.error("LiteLLM API error: %s", e)
-            raise ValueError(str(e)) from e
+        except Exception as e:
+            if response_format is None:
+                logger.error("LiteLLM API error: %s", e)
+                raise ValueError(str(e)) from e
+            logger.warning(
+                "Provider rejected structured output; retrying with JSON prompting: %s",
+                e,
+            )
+            kwargs.pop("response_format", None)
+            try:
+                response = await asyncio.to_thread(  # type: ignore[arg-type]
+                    litellm_completion, **kwargs
+                )
+                return response.choices[0].message.content or ""
+            except Exception as retry_error:
+                logger.error("LiteLLM API error after JSON fallback: %s", retry_error)
+                raise ValueError(str(retry_error)) from retry_error
 
 
 async def suggest_inventory_alternatives(
@@ -346,9 +380,98 @@ async def analyze_inventory_photos(
         )
         try:
             response = await asyncio.to_thread(litellm_completion, **kwargs)
-        except LiteLLMAPIError as exc:
-            logger.error("LiteLLM vision API error: %s", exc)
-            raise ValueError(str(exc)) from exc
+        except Exception as exc:
+            logger.warning(
+                "Vision provider rejected structured output; retrying with JSON prompting: %s",
+                exc,
+            )
+            kwargs.pop("response_format", None)
+            try:
+                response = await asyncio.to_thread(litellm_completion, **kwargs)
+            except Exception as retry_error:
+                logger.error(
+                    "LiteLLM vision API error after JSON fallback: %s", retry_error
+                )
+                raise ValueError(str(retry_error)) from retry_error
 
     raw_content = response.choices[0].message.content or ""
-    return PhotoInventoryResult.model_validate_json(raw_content)
+    try:
+        return PhotoInventoryResult.model_validate_json(raw_content)
+    except (json.JSONDecodeError, ValidationError) as exc:
+        raise ValueError(
+            "The vision provider returned an invalid inventory response. "
+            "Try another image-capable provider or a clearer photo."
+        ) from exc
+
+
+async def generate_recipe_image(
+    recipe_title: str,
+    recipe_summary: str | None,
+    recipe_ingredients: list[str],
+    recipe_instructions: str | None,
+    custom_prompt: str | None = None,
+) -> dict[str, str]:
+    """Generate a recipe image through OpenRouter's dedicated image API."""
+    with SessionLocal() as session:
+        config = _get_active_provider(session, image_capable=True)
+        if config is None:
+            raise ValueError(
+                "No enabled image-capable provider is configured. Add an OpenRouter image model in Settings."
+            )
+        api_key = decrypt_api_key(config.encrypted_api_key)
+        model = config.default_model.removeprefix("openrouter/")
+        base_url = (config.base_url or "https://openrouter.ai/api/v1").rstrip("/")
+
+    prompt = (
+        custom_prompt.strip()
+        if custom_prompt and custom_prompt.strip()
+        else (
+            "Create a photorealistic, appetizing editorial food photograph for this recipe. "
+            "Show the finished dish in a natural kitchen setting, with soft daylight, realistic "
+            "textures, and no text, labels, logos, or people."
+        )
+    )
+    full_prompt = f"""{prompt}
+
+Recipe title: {recipe_title}
+Summary: {recipe_summary or "Not provided"}
+Ingredients: {json.dumps(recipe_ingredients)}
+Instructions: {recipe_instructions or "Not provided"}
+"""
+
+    try:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(120.0)) as client:
+            response = await client.post(
+                f"{base_url}/images",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://example.com/kombu",
+                    "X-Title": "Kombu",
+                },
+                json={
+                    "model": model,
+                    "prompt": full_prompt,
+                    "size": "1024x1024",
+                    "output_format": "jpeg",
+                },
+            )
+            response.raise_for_status()
+            payload = response.json()
+    except httpx.HTTPError as exc:
+        logger.error("OpenRouter image API error: %s", exc)
+        raise ValueError(f"Image provider request failed: {exc}") from exc
+
+    try:
+        image = payload["data"][0]
+        encoded = image["b64_json"]
+        media_type = image.get("media_type", "image/jpeg")
+    except (KeyError, IndexError, TypeError) as exc:
+        raise ValueError("Image provider returned no image data.") from exc
+
+    return {
+        "prompt": full_prompt,
+        "image_url": f"data:{media_type};base64,{encoded}",
+        "provider": config.provider,
+        "model": config.default_model,
+    }

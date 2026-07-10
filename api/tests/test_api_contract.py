@@ -30,6 +30,10 @@ def test_openapi_includes_core_routes() -> None:
     assert "/api/v1/inventory" in schema["paths"]
     assert "/api/v1/shopping-list" in schema["paths"]
     assert "/api/v1/scanner/capabilities" in schema["paths"]
+    assert "patch" in schema["paths"]["/api/v1/recipes/{recipe_id}"]
+    assert "/api/v1/recipes/{recipe_id}/images" in schema["paths"]
+    assert "delete" in schema["paths"]["/api/v1/shopping-list/{item_id}"]
+    assert "/api/v1/ai/inventory/analyze-photos" not in schema["paths"]
 
 
 def test_unavailable_imports_are_not_advertised_as_ready() -> None:
