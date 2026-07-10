@@ -5,6 +5,7 @@ import asyncio
 import base64
 import json
 import logging
+from datetime import date
 
 from litellm import completion as litellm_completion
 from litellm.exceptions import APIError as LiteLLMAPIError
@@ -77,7 +78,7 @@ class PhotoInventoryItem(BaseModel):
     location: str = Field(
         default="pantry", pattern="^(pantry|fridge|freezer|counter|other)$"
     )
-    expires_on: str | None = None
+    expires_on: date | None = None
     notes: str | None = None
 
 
