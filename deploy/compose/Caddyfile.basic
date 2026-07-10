@@ -1,0 +1,5 @@
+:8080 {
+  reverse_proxy /api/* api:8000
+  reverse_proxy /healthz api:8000
+  reverse_proxy ui:3000
+}

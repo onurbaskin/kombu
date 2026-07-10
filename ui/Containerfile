@@ -4,6 +4,9 @@ ENV NODE_ENV=production \
     HOST=0.0.0.0 \
     PORT=3000
 
+ARG VITE_KOMBU_API_BASE_URL=/api
+ENV VITE_KOMBU_API_BASE_URL=${VITE_KOMBU_API_BASE_URL}
+
 WORKDIR /app
 
 RUN corepack enable

@@ -1,0 +1,17 @@
+[Unit]
+Description=Kombu Caddy edge
+After=kombu-api.service kombu-ui.service
+Requires=kombu-api.service kombu-ui.service
+
+[Container]
+Image=docker.io/library/caddy:2-alpine
+ContainerName=kombu-edge
+Network=kombu.network
+PublishPort=8080:8080
+Volume=%h/.config/kombu/Caddyfile:/etc/caddy/Caddyfile:ro,Z
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

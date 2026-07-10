@@ -10,7 +10,6 @@ Network=kombu.network
 EnvironmentFile=%h/.config/kombu/kombu.env
 Environment=HOST=0.0.0.0
 Environment=PORT=3000
-PublishPort=3000:3000
 
 [Service]
 Restart=on-failure

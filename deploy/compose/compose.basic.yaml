@@ -1,0 +1,102 @@
+name: kombu-basic
+
+services:
+  api:
+    build:
+      context: ../..
+      dockerfile: api/Containerfile
+    environment:
+      KOMBU_ENVIRONMENT: ${KOMBU_ENVIRONMENT:-production}
+      KOMBU_LOG_LEVEL: ${KOMBU_LOG_LEVEL:-INFO}
+      KOMBU_API_PREFIX: ${KOMBU_API_PREFIX:-/api/v1}
+      KOMBU_PUBLIC_WEB_URL: ${KOMBU_PUBLIC_WEB_URL:-http://localhost:8080}
+      KOMBU_CORS_ORIGINS: ${KOMBU_CORS_ORIGINS:-http://localhost:8080}
+      KOMBU_DATABASE_URL: ${KOMBU_DATABASE_URL:-sqlite:////app/var/kombu.db}
+      KOMBU_AI_FEATURES_ENABLED: ${KOMBU_AI_FEATURES_ENABLED:-false}
+      KOMBU_ENCRYPTION_KEY: ${KOMBU_ENCRYPTION_KEY:-}
+      KOMBU_SCANNER_UPLOAD_DIR: ${KOMBU_SCANNER_UPLOAD_DIR:-/app/var/scans}
+      KOMBU_RECIPE_IMPORT_DIR: ${KOMBU_RECIPE_IMPORT_DIR:-/app/var/imports}
+      KOMBU_BLOB_STORAGE_BACKEND: ${KOMBU_BLOB_STORAGE_BACKEND:-filesystem}
+      KOMBU_BLOB_STORAGE_ROOT: ${KOMBU_BLOB_STORAGE_ROOT:-/app/var/blobs}
+    command:
+      - /bin/sh
+      - -c
+      - |
+        uv run --no-dev alembic -c api/alembic.ini upgrade head
+        exec uv run --no-dev uvicorn api.app.main:app --host 0.0.0.0 --port 8000
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/app/.venv/bin/python",
+          "-c",
+          "from urllib.request import urlopen; urlopen('http://127.0.0.1:8000/healthz', timeout=2)",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    volumes:
+      - kombu-var:/app/var
+
+  ui:
+    build:
+      context: ../..
+      dockerfile: ui/Containerfile
+      args:
+        VITE_KOMBU_API_BASE_URL: /api
+    environment:
+      HOST: 0.0.0.0
+      PORT: 3000
+      KOMBU_API_BASE_URL: http://api:8000
+    depends_on:
+      api:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://127.0.0.1:3000').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))",
+        ]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
+  worker:
+    build:
+      context: ../..
+      dockerfile: api/Containerfile
+    environment:
+      KOMBU_DATABASE_URL: ${KOMBU_DATABASE_URL:-sqlite:////app/var/kombu.db}
+      KOMBU_ENCRYPTION_KEY: ${KOMBU_ENCRYPTION_KEY:-}
+      KOMBU_WORKER_POLL_SECONDS: ${KOMBU_WORKER_POLL_SECONDS:-5}
+      KOMBU_CACHE_URL: ${KOMBU_CACHE_URL:-}
+      KOMBU_SCANNER_UPLOAD_DIR: ${KOMBU_SCANNER_UPLOAD_DIR:-/app/var/scans}
+      KOMBU_RECIPE_IMPORT_DIR: ${KOMBU_RECIPE_IMPORT_DIR:-/app/var/imports}
+      KOMBU_BLOB_STORAGE_BACKEND: ${KOMBU_BLOB_STORAGE_BACKEND:-filesystem}
+      KOMBU_BLOB_STORAGE_ROOT: ${KOMBU_BLOB_STORAGE_ROOT:-/app/var/blobs}
+    command: ["uv", "run", "--no-dev", "python", "-m", "api.app.worker"]
+    depends_on:
+      api:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - kombu-var:/app/var
+
+  edge:
+    image: docker.io/library/caddy:2-alpine
+    depends_on:
+      api:
+        condition: service_healthy
+      ui:
+        condition: service_healthy
+    ports:
+      - "${KOMBU_HTTP_PORT:-8080}:8080"
+    volumes:
+      - ./Caddyfile.basic:/etc/caddy/Caddyfile:ro
+
+volumes:
+  kombu-var:

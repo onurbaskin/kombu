@@ -1,0 +1,5 @@
+:8080 {
+  reverse_proxy /api/* kombu-api:8000
+  reverse_proxy /healthz kombu-api:8000
+  reverse_proxy kombu-ui:3000
+}

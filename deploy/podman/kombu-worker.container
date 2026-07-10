@@ -1,0 +1,18 @@
+[Unit]
+Description=Kombu background worker
+After=kombu-db.service
+Requires=kombu-db.service
+
+[Container]
+Image=localhost/kombu-api:latest
+ContainerName=kombu-worker
+Network=kombu.network
+EnvironmentFile=%h/.config/kombu/kombu.env
+Volume=%h/kombu/var:/app/var:Z
+Exec=uv run --no-dev python -m api.app.worker
+
+[Service]
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

@@ -1,0 +1,88 @@
+name: kombu-scale-out
+
+# This is an override for compose.production.yaml. It adds the infrastructure
+# boundaries required for distributed deployments. Run it with:
+# docker compose -f compose.production.yaml -f compose.scale-out.yaml up -d
+
+services:
+  api:
+    environment:
+      KOMBU_CACHE_URL: ${KOMBU_CACHE_URL:-redis://valkey:6379/0}
+      KOMBU_BLOB_STORAGE_BACKEND: ${KOMBU_BLOB_STORAGE_BACKEND:-s3}
+      KOMBU_S3_ENDPOINT_URL: ${KOMBU_S3_ENDPOINT_URL:-http://object-store:9000}
+      KOMBU_S3_BUCKET: ${KOMBU_S3_BUCKET:-kombu}
+      KOMBU_S3_ACCESS_KEY: ${KOMBU_S3_ACCESS_KEY:-kombu}
+      KOMBU_S3_SECRET_KEY: ${KOMBU_S3_SECRET_KEY:-change_me_before_use}
+    deploy:
+      replicas: 2
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      object-store-init:
+        condition: service_completed_successfully
+
+  worker:
+    environment:
+      KOMBU_CACHE_URL: ${KOMBU_CACHE_URL:-redis://valkey:6379/0}
+      KOMBU_BLOB_STORAGE_BACKEND: ${KOMBU_BLOB_STORAGE_BACKEND:-s3}
+      KOMBU_S3_ENDPOINT_URL: ${KOMBU_S3_ENDPOINT_URL:-http://object-store:9000}
+      KOMBU_S3_BUCKET: ${KOMBU_S3_BUCKET:-kombu}
+      KOMBU_S3_ACCESS_KEY: ${KOMBU_S3_ACCESS_KEY:-kombu}
+      KOMBU_S3_SECRET_KEY: ${KOMBU_S3_SECRET_KEY:-change_me_before_use}
+    deploy:
+      replicas: 2
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      object-store-init:
+        condition: service_completed_successfully
+
+  ui:
+    deploy:
+      replicas: 2
+
+  valkey:
+    image: docker.io/valkey/valkey:8.1.8-alpine3.23
+    command: ["valkey-server", "--appendonly", "yes"]
+    healthcheck:
+      test: ["CMD", "valkey-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - kombu-valkey:/data
+
+  object-store:
+    image: docker.io/minio/minio:RELEASE.2025-09-07T16-13-09Z-cpuv1
+    command: ["server", "/data", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: ${KOMBU_S3_ACCESS_KEY:-kombu}
+      MINIO_ROOT_PASSWORD: ${KOMBU_S3_SECRET_KEY:-change_me_before_use}
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    volumes:
+      - kombu-object-storage:/data
+
+  object-store-init:
+    image: docker.io/minio/mc:RELEASE.2025-08-13T08-35-41Z-cpuv1
+    depends_on:
+      object-store:
+        condition: service_healthy
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        mc alias set local http://object-store:9000
+        "$${MINIO_ROOT_USER}" "$${MINIO_ROOT_PASSWORD}";
+        mc mb --ignore-existing "local/$${KOMBU_S3_BUCKET}";
+    environment:
+      MINIO_ROOT_USER: ${KOMBU_S3_ACCESS_KEY:-kombu}
+      MINIO_ROOT_PASSWORD: ${KOMBU_S3_SECRET_KEY:-change_me_before_use}
+      KOMBU_S3_BUCKET: ${KOMBU_S3_BUCKET:-kombu}
+    restart: "no"
+
+volumes:
+  kombu-valkey:
+  kombu-object-storage:
