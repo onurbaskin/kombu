@@ -74,6 +74,34 @@ class RecipeFilterValues(BaseModel):
 
     cuisines: list[str]
     source_types: list[str]
+    ingredients: list[str]
     max_prep_minutes: int | None = None
     max_cook_minutes: int | None = None
     model_config = ConfigDict(from_attributes=True)
+
+
+class RecipeEnhancementRead(BaseModel):
+    """Cached AI enhancement for a recipe."""
+
+    title: str
+    summary: str
+    instructions: str
+    tips: list[str] = Field(default_factory=list)
+    cached: bool
+    generated_at: datetime
+
+
+class IngredientSuggestionRead(BaseModel):
+    """Inventory match and alternatives for one recipe ingredient."""
+
+    name: str
+    available: bool
+    substitutions: list[str] = Field(default_factory=list)
+
+
+class RecipeShoppingResult(BaseModel):
+    """Result of intelligently adding missing recipe items to shopping."""
+
+    added: list[str] = Field(default_factory=list)
+    skipped_available: list[str] = Field(default_factory=list)
+    skipped_household_quantity: list[str] = Field(default_factory=list)

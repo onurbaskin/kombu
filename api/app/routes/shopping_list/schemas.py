@@ -32,3 +32,18 @@ class ShoppingListItemRead(ShoppingListItemCreate):
     created_at: datetime
     updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+
+class ShoppingSuggestionRead(BaseModel):
+    """One context-aware proposal for the next shopping run."""
+
+    item_name: str
+    reason: str
+    priority: str = "medium"
+    category: str = "Other"
+
+
+class ShoppingSuggestionsRead(BaseModel):
+    """Shopping proposals derived from the user's own kitchen activity."""
+
+    suggestions: list[ShoppingSuggestionRead]

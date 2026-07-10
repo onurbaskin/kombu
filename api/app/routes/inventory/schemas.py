@@ -24,3 +24,9 @@ class InventoryItemRead(InventoryItemCreate):
     created_at: datetime
     updated_at: datetime
     model_config = ConfigDict(from_attributes=True)
+
+
+class InventoryPhotoImportRead(BaseModel):
+    """Items created after analyzing uploaded inventory photos."""
+
+    items: list[InventoryItemRead]

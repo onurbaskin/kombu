@@ -26,3 +26,15 @@ def create_inventory_item(
     session.commit()
     session.refresh(item)
     return item
+
+
+def create_inventory_items(
+    session: Session, payloads: list[InventoryItemCreate]
+) -> list[InventoryItem]:
+    """Create multiple analyzed inventory items in one transaction."""
+    items = [InventoryItem(**payload.model_dump()) for payload in payloads]
+    session.add_all(items)
+    session.commit()
+    for item in items:
+        session.refresh(item)
+    return items

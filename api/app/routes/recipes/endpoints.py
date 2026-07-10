@@ -1,32 +1,43 @@
 import html
 import ipaddress
+import json
 import re
 import socket
 from typing import Annotated
 from urllib.parse import urljoin, urlsplit
 
 import httpx
+from api.app.auth import require_permission
 from api.app.database import get_session
 from api.app.models import RecipeSourceType
 from api.app.routes.recipes.schemas import (
+    IngredientSuggestionRead,
     RecipeCreate,
+    RecipeEnhancementRead,
     RecipeFilterValues,
     RecipeListResponse,
     RecipeRead,
+    RecipeShoppingResult,
 )
 from api.app.routes.recipes.utils import (
+    add_missing_recipe_items,
+    cache_recipe_enhancement,
     count_recipes,
     create_recipe,
     get_filter_values,
     get_recipe,
+    inventory_context,
+    latest_recipe_enhancement,
     list_recipes,
 )
+from api.app.runtime_settings import require_setting
 from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 router = APIRouter(prefix="/recipes", tags=["recipes"])
 SessionDep = Annotated[Session, Depends(get_session)]
+WriteDep = Annotated[object, Depends(require_permission("recipes:write"))]
 
 
 class RecipeImportUrlRequest(BaseModel):
@@ -139,6 +150,10 @@ def index(
     limit: int = Query(default=50, ge=1, le=100),
     cuisine: str | None = Query(default=None),
     source_type: str | None = Query(default=None),
+    ingredient: str | None = Query(default=None),
+    max_total_minutes: int | None = Query(default=None, ge=1),
+    favorites_only: bool = Query(default=False),
+    has_image: bool | None = Query(default=None),
     sort_by: str = Query(default="updated_at"),
     sort_order: str = Query(default="desc"),
 ) -> RecipeListResponse:
@@ -148,6 +163,10 @@ def index(
         search=search,
         cuisine=cuisine,
         source_type=source_type,
+        ingredient=ingredient,
+        max_total_minutes=max_total_minutes,
+        favorites_only=favorites_only,
+        has_image=has_image,
     )
     items = [
         RecipeRead.model_validate(recipe)
@@ -158,6 +177,10 @@ def index(
             limit=limit,
             cuisine=cuisine,
             source_type=source_type,
+            ingredient=ingredient,
+            max_total_minutes=max_total_minutes,
+            favorites_only=favorites_only,
+            has_image=has_image,
             sort_by=sort_by,
             sort_order=sort_order,
         )
@@ -171,7 +194,7 @@ def index(
 
 
 @router.post("", response_model=RecipeRead, status_code=status.HTTP_201_CREATED)
-def create(payload: RecipeCreate, session: SessionDep) -> RecipeRead:
+def create(payload: RecipeCreate, session: SessionDep, _user: WriteDep) -> RecipeRead:
     """Create a recipe."""
     recipe = create_recipe(session, payload)
     return RecipeRead.model_validate(recipe)
@@ -194,6 +217,145 @@ def show(recipe_id: int, session: SessionDep) -> RecipeRead:
     return RecipeRead.model_validate(recipe)
 
 
+@router.get(
+    "/{recipe_id}/enhancement",
+    response_model=RecipeEnhancementRead | None,
+)
+def cached_enhancement(
+    recipe_id: int, session: SessionDep
+) -> RecipeEnhancementRead | None:
+    """Return a cached AI enhancement without calling a provider."""
+    if get_recipe(session, recipe_id) is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found."
+        )
+    record = latest_recipe_enhancement(session, recipe_id)
+    if record is None:
+        return None
+    payload = json.loads(record.suggestion)
+    return RecipeEnhancementRead(**payload, cached=True, generated_at=record.created_at)
+
+
+@router.post(
+    "/{recipe_id}/enhancement",
+    response_model=RecipeEnhancementRead,
+)
+async def enhance_stored_recipe(
+    recipe_id: int,
+    session: SessionDep,
+    _user: WriteDep,
+    regenerate: bool = Query(default=False),
+    _ai_enabled: Annotated[None, Depends(require_setting("feature.ai"))] = None,
+    _capability_enabled: Annotated[
+        None, Depends(require_setting("ai.recipe_enhancement"))
+    ] = None,
+) -> RecipeEnhancementRead:
+    """Generate or reuse a cached, structured recipe enhancement."""
+    from api.app.services.ai import (
+        EnhancedRecipe,
+        enhance_recipe,
+        has_available_provider,
+    )
+
+    recipe = get_recipe(session, recipe_id)
+    if recipe is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found."
+        )
+    cached = latest_recipe_enhancement(session, recipe_id)
+    if cached is not None and not regenerate:
+        return RecipeEnhancementRead(
+            **json.loads(cached.suggestion), cached=True, generated_at=cached.created_at
+        )
+    if not has_available_provider():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No AI provider is enabled. Add one in Settings.",
+        )
+    generated = await enhance_recipe(
+        recipe_title=recipe.title,
+        recipe_summary=recipe.summary,
+        recipe_instructions=recipe.instructions,
+        recipe_ingredients=[ingredient.name for ingredient in recipe.ingredients],
+    )
+    if not isinstance(generated, EnhancedRecipe):
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=generated.get("error", "AI provider could not enhance this recipe."),
+        )
+    payload = generated.model_dump()
+    record = cache_recipe_enhancement(session, recipe_id, payload)
+    return RecipeEnhancementRead(
+        **payload, cached=False, generated_at=record.created_at
+    )
+
+
+@router.post(
+    "/{recipe_id}/inventory-suggestions",
+    response_model=list[IngredientSuggestionRead],
+)
+async def suggest_from_inventory(
+    recipe_id: int,
+    session: SessionDep,
+    _user: WriteDep,
+    _ai_enabled: Annotated[None, Depends(require_setting("feature.ai"))] = None,
+    _capability_enabled: Annotated[
+        None, Depends(require_setting("ai.inventory_substitutions"))
+    ] = None,
+) -> list[IngredientSuggestionRead]:
+    """Suggest inventory-backed alternatives for missing ingredients."""
+    from api.app.services.ai import (
+        has_available_provider,
+        suggest_inventory_alternatives,
+    )
+
+    recipe = get_recipe(session, recipe_id)
+    if recipe is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found."
+        )
+    if not has_available_provider():
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="No AI provider is enabled. Add one in Settings.",
+        )
+    inventory, expiring = inventory_context(session)
+    generated = await suggest_inventory_alternatives(
+        recipe_title=recipe.title,
+        recipe_ingredients=[ingredient.name for ingredient in recipe.ingredients],
+        inventory_items=inventory,
+        expiry_items=expiring,
+    )
+    if not isinstance(generated, list):
+        detail = generated.get("error", "AI provider could not suggest alternatives.")
+        raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail)
+    return [IngredientSuggestionRead.model_validate(item) for item in generated]
+
+
+@router.post(
+    "/{recipe_id}/shopping-list",
+    response_model=RecipeShoppingResult,
+)
+def add_recipe_to_shopping(
+    recipe_id: int,
+    session: SessionDep,
+    _user: WriteDep,
+    _ai_enabled: Annotated[None, Depends(require_setting("feature.ai"))] = None,
+    _capability_enabled: Annotated[
+        None, Depends(require_setting("ai.shopping_suggestions"))
+    ] = None,
+) -> RecipeShoppingResult:
+    """Add missing recipe ingredients in sensible shopping quantities."""
+    recipe = get_recipe(session, recipe_id)
+    if recipe is None:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="Recipe not found."
+        )
+    return RecipeShoppingResult.model_validate(
+        add_missing_recipe_items(session, recipe)
+    )
+
+
 @router.post(
     "/import-url",
     response_model=RecipeRead,
@@ -202,16 +364,15 @@ def show(recipe_id: int, session: SessionDep) -> RecipeRead:
 async def import_from_url(
     payload: RecipeImportUrlRequest,
     session: SessionDep,
+    _user: WriteDep,
+    _ai_enabled: Annotated[None, Depends(require_setting("feature.ai"))],
+    _capability_enabled: Annotated[
+        None, Depends(require_setting("ai.recipe_enhancement"))
+    ],
 ) -> RecipeRead:
     """Fetch a public recipe URL, extract it through AI, and create a recipe."""
-    from api.app.config import get_settings
     from api.app.services.ai import extract_web_recipe, has_available_provider
 
-    if not get_settings().ai_features_enabled:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="AI features are not enabled.",
-        )
     if not has_available_provider():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,

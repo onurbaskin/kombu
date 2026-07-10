@@ -481,6 +481,48 @@ export async function suggestShoppingItems(body: {
   }
 }
 
+export async function getShoppingSuggestions(): Promise<
+  ApiResult<{ suggestions: ShoppingSuggestion[] }>
+> {
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/shopping-list/suggestions`, {
+      method: "POST",
+      headers: { Accept: "application/json" },
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return { data: await res.json(), source: "api" };
+  } catch (error) {
+    return {
+      data: { suggestions: [] },
+      source: "fallback",
+      error:
+        error instanceof Error ? error.message : "Unable to suggest items.",
+    };
+  }
+}
+
+export async function importInventoryPhotos(
+  photos: File[],
+): Promise<ApiResult<{ items: InventoryItem[] }>> {
+  const form = new FormData();
+  for (const photo of photos) form.append("photos", photo);
+  try {
+    const res = await fetch(`${baseUrl}/api/v1/inventory/import-photos`, {
+      method: "POST",
+      body: form,
+    });
+    if (!res.ok) throw new Error(await res.text());
+    return { data: await res.json(), source: "api" };
+  } catch (error) {
+    return {
+      data: { items: [] },
+      source: "fallback",
+      error:
+        error instanceof Error ? error.message : "Unable to analyze photos.",
+    };
+  }
+}
+
 const baseUrl = getApiBaseUrl();
 
 export async function getKnownProviders(): Promise<ApiResult<KnownProvider[]>> {

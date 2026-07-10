@@ -2,6 +2,7 @@
 """AI provider service using LiteLLM for multi-provider support."""
 
 import asyncio
+import base64
 import json
 import logging
 
@@ -55,6 +56,7 @@ class ShoppingSuggestion(BaseModel):
     item_name: str
     reason: str
     priority: str = "medium"
+    category: str = "Other"
 
 
 class EnhancedRecipe(BaseModel):
@@ -64,6 +66,25 @@ class EnhancedRecipe(BaseModel):
     summary: str
     instructions: str
     tips: list[str] = Field(default_factory=list)
+
+
+class PhotoInventoryItem(BaseModel):
+    """Inventory item identified in one or more kitchen photos."""
+
+    name: str = Field(min_length=1, max_length=240)
+    quantity: float = Field(default=1, ge=0)
+    unit: str | None = Field(default=None, max_length=80)
+    location: str = Field(
+        default="pantry", pattern="^(pantry|fridge|freezer|counter|other)$"
+    )
+    expires_on: str | None = None
+    notes: str | None = None
+
+
+class PhotoInventoryResult(BaseModel):
+    """Structured inventory extraction result returned by a vision model."""
+
+    items: list[PhotoInventoryItem] = Field(default_factory=list)
 
 
 class ImportedRecipeIngredient(BaseModel):
@@ -195,7 +216,8 @@ Most frequently cooked: {json.dumps(frequently_cooked)}
 
 Suggest items that make sense (not single-use small quantities).
 Focus on staples, fresh produce, and items likely running low.
-Respond with: {{"suggestions": [{{"item_name": "...", "reason": "...", "priority": "high|medium|low"}}]}}"""
+Assign each item a concise supermarket category such as Produce, Proteins, Dairy, Pantry, Frozen, or Household.
+Respond with: {{"suggestions": [{{"item_name": "...", "reason": "...", "priority": "high|medium|low", "category": "..."}}]}}"""
 
     try:
         result = await _call_llm(
@@ -276,10 +298,56 @@ Webpage text:
 
 
 async def analyze_inventory_photos(
-    _image_paths: list[str],
-) -> dict:
-    """Analyze photos to identify food items."""
-    return {
-        "error": "Photo analysis requires a vision-capable model. "
-        "Configure a provider with a vision model."
-    }
+    images: list[tuple[str, bytes]],
+) -> PhotoInventoryResult:
+    """Identify visible kitchen stock from in-memory image uploads."""
+    content: list[dict[str, object]] = [
+        {
+            "type": "text",
+            "text": (
+                "Identify food, drink, and household items clearly visible in these "
+                "photos. Merge duplicates, estimate package counts conservatively, "
+                "and do not invent hidden items. Use pantry when storage is unclear. "
+                "Only provide an expiry date when it is readable in the image."
+            ),
+        }
+    ]
+    for content_type, image_bytes in images:
+        encoded = base64.b64encode(image_bytes).decode("ascii")
+        content.append(
+            {
+                "type": "image_url",
+                "image_url": {"url": f"data:{content_type};base64,{encoded}"},
+            }
+        )
+
+    with SessionLocal() as session:
+        config = _get_active_provider(session)
+        if config is None:
+            raise ValueError("No AI provider configured")
+        kwargs = _get_client_kwargs(config)
+        kwargs.update(
+            {
+                "messages": [
+                    {
+                        "role": "system",
+                        "content": (
+                            "You are a careful kitchen inventory assistant. Return "
+                            "only structured items actually visible in the images."
+                        ),
+                    },
+                    {"role": "user", "content": content},
+                ],
+                "response_format": PhotoInventoryResult,
+                "temperature": 0.1,
+                "max_tokens": 2048,
+            }
+        )
+        try:
+            response = await asyncio.to_thread(litellm_completion, **kwargs)
+        except LiteLLMAPIError as exc:
+            logger.error("LiteLLM vision API error: %s", exc)
+            raise ValueError(str(exc)) from exc
+
+    raw_content = response.choices[0].message.content or ""
+    return PhotoInventoryResult.model_validate_json(raw_content)
