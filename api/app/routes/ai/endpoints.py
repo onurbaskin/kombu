@@ -1,11 +1,13 @@
 import logging
 from typing import Annotated
 
+from api.app.auth import require_permission
 from api.app.config import Settings, get_settings
 from api.app.database import get_session
 from api.app.models import AiProviderConfig
 from api.app.routes.ai.schemas import (
     AiCapabilityRead,
+    AiCapabilityUpdate,
     AiProviderConfigCreate,
     AiProviderConfigRead,
     AiProviderConfigUpdate,
@@ -14,6 +16,7 @@ from api.app.routes.ai.schemas import (
     KnownProviderRead,
 )
 from api.app.routes.ai.utils import create_ai_suggestion, list_ai_capabilities
+from api.app.runtime_settings import require_setting, set_setting_enabled
 from api.app.services.ai import EnhancedRecipe
 from api.app.services.provider_credentials import (
     ProviderCredentialError,
@@ -30,6 +33,7 @@ logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/ai", tags=["ai"])
 SessionDep = Annotated[Session, Depends(get_session)]
 SettingsDep = Annotated[Settings, Depends(get_settings)]
+AdminDep = Annotated[object, Depends(require_permission("settings:manage"))]
 
 
 def _provider_response(config: AiProviderConfig) -> AiProviderConfigRead:
@@ -68,14 +72,22 @@ class IngredientSubstitutionRequest(BaseModel):
     expiry_items: list[dict[str, str]] = Field(default_factory=list)
 
 
-class PhotoAnalysisRequest(BaseModel):
-    image_paths: list[str] = Field(default_factory=list)
-
-
 @router.get("/capabilities", response_model=list[AiCapabilityRead])
-def capabilities(settings: SettingsDep) -> list[AiCapabilityRead]:
+def capabilities(session: SessionDep) -> list[AiCapabilityRead]:
     """Return AI capabilities for the current deployment."""
-    return list_ai_capabilities(settings)
+    return list_ai_capabilities(session)
+
+
+@router.patch("/capabilities/{key}", response_model=AiCapabilityRead)
+def update_capability(
+    key: str, payload: AiCapabilityUpdate, session: SessionDep, _admin: AdminDep
+) -> AiCapabilityRead:
+    """Persist an administrator-controlled AI capability switch."""
+    available = {item.key for item in list_ai_capabilities(session)}
+    if key not in available:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "AI capability not found.")
+    set_setting_enabled(session, f"ai.{key}", payload.enabled)
+    return next(item for item in list_ai_capabilities(session) if item.key == key)
 
 
 @router.post(
@@ -86,25 +98,18 @@ def capabilities(settings: SettingsDep) -> list[AiCapabilityRead]:
 def suggest(
     payload: AiSuggestionCreate,
     session: SessionDep,
-    settings: SettingsDep,
 ) -> AiSuggestionRead:
     """Create a provider-free AI suggestion record."""
-    suggestion = create_ai_suggestion(session, payload, settings)
+    suggestion = create_ai_suggestion(session, payload)
     return AiSuggestionRead.model_validate(suggestion)
 
 
 @router.post("/shopping/suggest")
 async def shopping_suggestions(
     payload: ShoppingSuggestRequest,
-    settings: SettingsDep,
+    _enabled: Annotated[None, Depends(require_setting("ai.shopping_suggestions"))],
 ) -> dict:
     """Get AI-powered shopping list suggestions."""
-    if not settings.ai_features_enabled:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="AI features are not enabled.",
-        )
-
     from api.app.services.ai import suggest_shopping_items
 
     try:
@@ -125,15 +130,9 @@ async def shopping_suggestions(
 @router.post("/recipes/enhance")
 async def enhance_recipe(
     payload: RecipeEnhanceRequest,
-    settings: SettingsDep,
+    _enabled: Annotated[None, Depends(require_setting("ai.recipe_enhancement"))],
 ) -> dict:
     """Enhance a recipe with AI-powered formatting."""
-    if not settings.ai_features_enabled:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="AI features are not enabled.",
-        )
-
     from api.app.services.ai import enhance_recipe as do_enhance
 
     try:
@@ -159,15 +158,9 @@ async def enhance_recipe(
 @router.post("/recipes/substitutions")
 async def ingredient_substitutions(
     payload: IngredientSubstitutionRequest,
-    settings: SettingsDep,
+    _enabled: Annotated[None, Depends(require_setting("ai.inventory_substitutions"))],
 ) -> dict:
     """Get AI-powered ingredient substitution suggestions."""
-    if not settings.ai_features_enabled:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="AI features are not enabled.",
-        )
-
     from api.app.services.ai import suggest_inventory_alternatives
 
     try:
@@ -183,23 +176,6 @@ async def ingredient_substitutions(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail=str(e),
         ) from e
-
-
-@router.post("/inventory/analyze-photos")
-async def analyze_photos(
-    payload: PhotoAnalysisRequest,
-    settings: SettingsDep,
-) -> dict:
-    """Analyze food photos to identify inventory items."""
-    if not settings.ai_features_enabled:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="AI features are not enabled.",
-        )
-
-    from api.app.services.ai import analyze_inventory_photos
-
-    return await analyze_inventory_photos(payload.image_paths)
 
 
 @router.get("/providers/known", response_model=list[KnownProviderRead])
@@ -225,6 +201,7 @@ def list_providers(session: SessionDep) -> list[AiProviderConfigRead]:
 def create_provider(
     payload: AiProviderConfigCreate,
     session: SessionDep,
+    _admin: AdminDep,
 ) -> AiProviderConfigRead:
     """Add a new AI provider configuration."""
     try:
@@ -248,6 +225,7 @@ def update_provider(
     provider_id: int,
     payload: AiProviderConfigUpdate,
     session: SessionDep,
+    _admin: AdminDep,
 ) -> AiProviderConfigRead:
     """Update an AI provider configuration."""
     config = session.get(AiProviderConfig, provider_id)
@@ -279,6 +257,7 @@ def update_provider(
 def delete_provider(
     provider_id: int,
     session: SessionDep,
+    _admin: AdminDep,
 ) -> None:
     """Delete an AI provider configuration."""
     config = session.get(AiProviderConfig, provider_id)

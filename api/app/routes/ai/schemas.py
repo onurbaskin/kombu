@@ -12,6 +12,12 @@ class AiCapabilityRead(BaseModel):
     description: str
 
 
+class AiCapabilityUpdate(BaseModel):
+    """Administrator update for an AI capability switch."""
+
+    enabled: bool
+
+
 class AiSuggestionCreate(BaseModel):
     """AI suggestion request."""
 
