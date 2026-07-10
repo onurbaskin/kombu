@@ -5,17 +5,25 @@ import {
   UsersIcon,
   WandSparklesIcon,
 } from "lucide-react";
-import { Link, useNavigation } from "react-router";
+import {
+  Link,
+  useNavigate,
+  useNavigation,
+  useSearchParams,
+} from "react-router";
 import { RecipeDetailTopbar } from "~/components/recipe-detail-topbar";
+import { RecipeEditor } from "~/components/recipe-editor";
 import { SourceNotice } from "~/components/source-notice";
 import { Badge } from "~/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "~/components/ui/card";
 import { Skeleton } from "~/components/ui/skeleton";
 import {
   getAiCapabilities,
   getRecipe,
   getRecipeEnhancement,
+  getRecipeVersion,
+  getRecipeVersions,
 } from "~/lib/api/resources";
+import { ingredientEditorData, parseEditorData } from "~/lib/editorjs";
 import type { Route } from "./+types/recipe-detail";
 
 export function meta({ data }: Route.MetaArgs) {
@@ -28,17 +36,21 @@ export function meta({ data }: Route.MetaArgs) {
   ];
 }
 
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params, request }: Route.LoaderArgs) {
   const recipeId = Number(params.id);
   if (Number.isNaN(recipeId)) {
     throw new Response("Not Found", { status: 404 });
   }
-  const [recipe, enhancement, capabilities] = await Promise.all([
+  const [recipe, enhancement, capabilities, versions] = await Promise.all([
     getRecipe(recipeId),
     getRecipeEnhancement(recipeId),
     getAiCapabilities(),
+    getRecipeVersions(recipeId),
   ]);
-  return { recipe, enhancement, capabilities };
+  const versionId = Number(new URL(request.url).searchParams.get("version"));
+  const version =
+    versionId > 0 ? await getRecipeVersion(recipeId, versionId) : null;
+  return { recipe, enhancement, capabilities, versions, version };
 }
 
 export const handle = { topbar: RecipeDetailTopbar };
@@ -46,15 +58,21 @@ export const handle = { topbar: RecipeDetailTopbar };
 export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
   const { recipe: recipeResult, enhancement: enhancementResult } = loaderData;
   const recipe = recipeResult.data;
-  const enhancement = enhancementResult.data;
+  const selectedVersion = loaderData.version?.data;
+  const displayRecipe = selectedVersion ?? recipe;
+  const enhancement = selectedVersion ? null : enhancementResult.data;
   const navigation = useNavigation();
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const isLoading = navigation.state === "loading";
 
-  const imageUrl = recipe.image_url
-    ? recipe.image_url.startsWith("http://") ||
-      recipe.image_url.startsWith("https://")
-      ? recipe.image_url
-      : `https://${recipe.image_url}`
+  const rawImageUrl = recipe.images?.[0]?.image_url ?? displayRecipe.image_url;
+  const imageUrl = rawImageUrl
+    ? rawImageUrl.startsWith("http://") ||
+      rawImageUrl.startsWith("https://") ||
+      rawImageUrl.startsWith("data:")
+      ? rawImageUrl
+      : `https://${rawImageUrl}`
     : null;
 
   const sourceUrl = recipe.source_url
@@ -110,153 +128,144 @@ export default function RecipeDetail({ loaderData }: Route.ComponentProps) {
   return (
     <div className="mx-auto max-w-3xl">
       <SourceNotice results={[recipeResult]} />
-
       <Link
         to="/recipes"
-        className="inline-flex items-center gap-1 text-muted-foreground text-sm hover:text-foreground transition-colors mb-6"
+        className="mb-6 inline-flex items-center gap-1 text-muted-foreground text-sm transition-colors hover:text-foreground"
       >
         <ArrowLeftIcon className="size-4" />
         Back to recipes
       </Link>
 
-      {imageUrl ? (
-        <div className="mb-6 overflow-hidden rounded-xl bg-muted aspect-video border">
-          <img
-            src={imageUrl}
-            alt={recipe.title}
-            className="h-full w-full object-cover"
-            onError={(e) => {
-              (e.target as HTMLImageElement).style.display = "none";
-            }}
-          />
-        </div>
-      ) : null}
-
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        {recipe.is_favorite && <Badge variant="secondary">Favorite</Badge>}
-        <Badge>{recipe.source_type}</Badge>
-        {recipe.cuisine && <Badge variant="secondary">{recipe.cuisine}</Badge>}
-      </div>
-
-      {(enhancement?.summary || recipe.summary) && (
-        <p className="text-muted-foreground text-lg leading-relaxed mb-6">
-          {enhancement?.summary ?? recipe.summary}
-        </p>
-      )}
-
-      {enhancement && (
-        <div className="mb-6 flex items-center gap-2 text-muted-foreground text-sm">
-          <WandSparklesIcon aria-hidden="true" />
-          AI-enhanced version cached{" "}
-          {new Date(enhancement.generated_at).toLocaleDateString()}
-        </div>
-      )}
-
-      <div className="flex flex-wrap gap-3 mb-8">
-        {recipe.prep_minutes != null && recipe.cook_minutes != null && (
-          <Card className="border-dashed">
-            <CardContent className="flex items-center gap-2 py-2 px-4">
-              <ClockIcon className="size-4 text-muted-foreground" />
-              <span className="text-sm">
-                Prep: {recipe.prep_minutes}m · Cook: {recipe.cook_minutes}m
-                <span className="text-muted-foreground ml-1">
-                  ({recipe.prep_minutes + recipe.cook_minutes}m total)
-                </span>
-              </span>
-            </CardContent>
-          </Card>
+      <article className="overflow-hidden rounded-xl border bg-card shadow-sm">
+        {imageUrl && (
+          <div className="aspect-video overflow-hidden border-b bg-muted">
+            <img
+              src={imageUrl}
+              alt={displayRecipe.title}
+              className="h-full w-full object-cover"
+              onError={(event) => {
+                (event.target as HTMLImageElement).style.display = "none";
+              }}
+            />
+          </div>
         )}
-        {recipe.yield_servings != null && (
-          <Card className="border-dashed">
-            <CardContent className="flex items-center gap-2 py-2 px-4">
-              <UsersIcon className="size-4 text-muted-foreground" />
-              <span className="text-sm">{recipe.yield_servings} servings</span>
-            </CardContent>
-          </Card>
-        )}
-        {sourceUrl && (
-          <Card className="border-dashed">
-            <CardContent className="flex items-center gap-2 py-2 px-4">
-              <ExternalLinkIcon className="size-4 text-muted-foreground" />
+        <div className="p-6 sm:p-8">
+          {(loaderData.versions.data ?? []).length > 1 && (
+            <label className="mb-4 flex max-w-sm flex-col gap-1 text-sm">
+              <span className="font-medium">Recipe version</span>
+              <select
+                className="h-9 rounded-md border bg-background px-3"
+                value={searchParams.get("version") ?? "0"}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  navigate(
+                    value === "0"
+                      ? `/recipes/${recipe.id}`
+                      : `/recipes/${recipe.id}?version=${value}`,
+                  );
+                }}
+              >
+                {(loaderData.versions.data ?? []).map((version) => (
+                  <option key={version.id} value={version.id}>
+                    {version.id === 0
+                      ? "Original recipe"
+                      : `${version.version_type} · ${new Date(version.created_at).toLocaleString()}`}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            {recipe.is_favorite && <Badge variant="secondary">Favorite</Badge>}
+            <Badge>
+              {selectedVersion
+                ? `${selectedVersion.version_type} version`
+                : recipe.source_type}
+            </Badge>
+            {displayRecipe.cuisine && (
+              <Badge variant="secondary">{displayRecipe.cuisine}</Badge>
+            )}
+          </div>
+          <h1 className="font-display font-semibold text-3xl tracking-tight">
+            {displayRecipe.title}
+          </h1>
+
+          {(enhancement?.summary || displayRecipe.summary) && (
+            <p className="mt-3 text-muted-foreground text-lg leading-relaxed">
+              {enhancement?.summary ?? displayRecipe.summary}
+            </p>
+          )}
+
+          {enhancement && (
+            <div className="mt-4 flex items-center gap-2 text-muted-foreground text-sm">
+              <WandSparklesIcon aria-hidden="true" />
+              AI-generated version cached{" "}
+              {new Date(enhancement.generated_at).toLocaleDateString()}
+            </div>
+          )}
+
+          <div className="mt-6 flex flex-wrap gap-3 text-sm">
+            {displayRecipe.prep_minutes != null &&
+              displayRecipe.cook_minutes != null && (
+                <div className="flex items-center gap-2 rounded-lg border px-3 py-2">
+                  <ClockIcon className="size-4 text-muted-foreground" />
+                  Prep: {displayRecipe.prep_minutes}m · Cook:{" "}
+                  {displayRecipe.cook_minutes}m
+                </div>
+              )}
+            {displayRecipe.yield_servings != null && (
+              <div className="flex items-center gap-2 rounded-lg border px-3 py-2">
+                <UsersIcon className="size-4 text-muted-foreground" />
+                {displayRecipe.yield_servings} servings
+              </div>
+            )}
+            {sourceUrl && (
               <a
                 href={sourceUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-sm hover:text-primary transition-colors"
+                className="flex items-center gap-2 rounded-lg border px-3 py-2 hover:text-primary"
               >
+                <ExternalLinkIcon className="size-4 text-muted-foreground" />
                 View source
               </a>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+            )}
+          </div>
 
-      {recipe.ingredients.length > 0 && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              Ingredients
-              {recipe.yield_servings != null && (
-                <span className="text-muted-foreground font-normal text-sm">
-                  {recipe.yield_servings} servings
-                </span>
-              )}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="grid gap-2 sm:grid-cols-2">
-              {recipe.ingredients.map((ing) => (
-                <li key={ing.id} className="flex items-baseline gap-2 text-sm">
-                  {ing.quantity != null && (
-                    <span className="font-medium tabular-nums shrink-0">
-                      {ing.quantity}
-                    </span>
-                  )}
-                  {ing.unit && (
-                    <span className="text-muted-foreground shrink-0">
-                      {ing.unit}
-                    </span>
-                  )}
-                  <span>{ing.name}</span>
-                  {ing.note && (
-                    <span className="text-muted-foreground text-xs">
-                      ({ing.note})
-                    </span>
-                  )}
-                </li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
+          {(displayRecipe.ingredients ?? []).length > 0 && (
+            <section className="mt-8 border-t pt-6">
+              <h2 className="mb-3 font-semibold text-lg">Ingredients</h2>
+              <RecipeEditor
+                data={ingredientEditorData(displayRecipe.ingredients ?? [])}
+                readOnly
+              />
+            </section>
+          )}
 
-      {(enhancement?.instructions || recipe.instructions) && (
-        <Card className="mb-6">
-          <CardHeader>
-            <CardTitle>Instructions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="prose prose-sm max-w-none text-sm leading-relaxed whitespace-pre-line">
-              {enhancement?.instructions ?? recipe.instructions}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+          {(enhancement?.instructions || displayRecipe.instructions) && (
+            <section className="mt-8 border-t pt-6">
+              <h2 className="mb-3 font-semibold text-lg">Instructions</h2>
+              <RecipeEditor
+                data={parseEditorData(
+                  enhancement?.instructions ?? displayRecipe.instructions,
+                )}
+                readOnly
+              />
+            </section>
+          )}
 
-      {enhancement && enhancement.tips.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Cook's notes</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="flex list-disc flex-col gap-2 pl-5 text-sm">
-              {enhancement.tips.map((tip) => (
-                <li key={tip}>{tip}</li>
-              ))}
-            </ul>
-          </CardContent>
-        </Card>
-      )}
+          {enhancement && enhancement.tips.length > 0 && (
+            <section className="mt-8 border-t pt-6">
+              <h2 className="mb-3 font-semibold text-lg">Cook&apos;s notes</h2>
+              <ul className="flex list-disc flex-col gap-2 pl-5 text-sm">
+                {enhancement.tips.map((tip) => (
+                  <li key={tip}>{tip}</li>
+                ))}
+              </ul>
+            </section>
+          )}
+        </div>
+      </article>
     </div>
   );
 }

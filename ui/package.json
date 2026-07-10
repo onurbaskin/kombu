@@ -6,12 +6,16 @@
     "build": "react-router build",
     "dev": "react-router dev --host 0.0.0.0",
     "format": "biome format --write app react-router.config.ts vite.config.ts tsconfig.json package.json biome.json",
-    "generate:api": "openapi-typescript ../openapi.json -o app/lib/api/schema.d.ts && biome format --write app/lib/api/schema.d.ts",
+    "generate:api": "pnpm dlx --package=typescript@5.8.3 --package=openapi-typescript@7.13.0 openapi-typescript ../openapi.json -o app/lib/api/schema.d.ts && biome format --write app/lib/api/schema.d.ts",
     "lint": "biome check app react-router.config.ts vite.config.ts tsconfig.json package.json biome.json components.json",
     "start": "react-router-serve ./build/server/index.js",
     "typecheck": "react-router typegen && tsc --noEmit"
   },
   "dependencies": {
+    "@editorjs/editorjs": "^2.31.6",
+    "@editorjs/header": "^2.8.9",
+    "@editorjs/list": "^2.0.9",
+    "@editorjs/quote": "^2.7.6",
     "@hookform/resolvers": "^5.4.0",
     "@react-router/node": "^7.6.3",
     "@react-router/serve": "^7.6.3",
