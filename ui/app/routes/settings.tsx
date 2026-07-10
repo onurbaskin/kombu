@@ -8,7 +8,7 @@ import {
   UserPlusIcon,
 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
-import { useRevalidator } from "react-router";
+import { useMatches, useRevalidator } from "react-router";
 import { SourceNotice } from "~/components/source-notice";
 import { StatusBadge } from "~/components/status-badge";
 import { Badge } from "~/components/ui/badge";
@@ -72,6 +72,16 @@ export function meta() {
 
 export const handle = {
   topbar: function SettingsTopbar() {
+    const matches = useMatches();
+    const settingsData = [...matches]
+      .reverse()
+      .map(
+        (match) =>
+          match.data as { user?: { data?: { role?: string } } } | undefined,
+      )
+      .find((data) => data?.user?.data?.role);
+    if (settingsData?.user?.data?.role !== "admin") return null;
+
     return (
       <>
         <Button
