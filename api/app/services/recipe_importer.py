@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from contextlib import suppress
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -104,6 +105,7 @@ def import_kaggle_dataset(session: Session, import_job_id: int) -> ImportJob:
 
         job.imported_records = total_recipes
         job.status = ImportJobStatus.COMPLETED
+        job.completed_at = datetime.now(UTC)
         session.merge(job)
         session.commit()
 
@@ -116,6 +118,7 @@ def import_kaggle_dataset(session: Session, import_job_id: int) -> ImportJob:
         logger.exception(f"Import job {import_job_id} failed")
         job.status = ImportJobStatus.FAILED
         job.error_message = str(exc)
+        job.completed_at = datetime.now(UTC)
         session.merge(job)
         session.commit()
         raise
