@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from api.app.models import UserRole
-from pydantic import BaseModel, ConfigDict, EmailStr
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class CurrentUserRead(BaseModel):
@@ -20,7 +20,7 @@ class UserRead(BaseModel):
     """Administrator-facing user summary."""
 
     id: int
-    email: EmailStr
+    email: str
     display_name: str
     role: UserRole
     is_active: bool
@@ -38,7 +38,7 @@ class UserUpdate(BaseModel):
 class UserInviteCreate(BaseModel):
     """Create a pending user invitation."""
 
-    email: EmailStr
+    email: str = Field(min_length=3, max_length=320, pattern=r"^[^@\s]+@[^@\s]+$")
     role: UserRole = UserRole.VIEWER
 
 
@@ -46,7 +46,7 @@ class UserInviteRead(BaseModel):
     """Pending invitation safe to display to administrators."""
 
     id: int
-    email: EmailStr
+    email: str
     role: UserRole
     created_at: datetime
     model_config = ConfigDict(from_attributes=True)

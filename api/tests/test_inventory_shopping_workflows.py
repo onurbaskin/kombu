@@ -2,6 +2,7 @@
 
 from collections.abc import Callable, Generator
 
+from api.app.auth import get_current_user
 from api.app.database import Base, get_session
 from api.app.main import app
 from api.app.models import (
@@ -75,13 +76,17 @@ def test_viewer_cannot_mutate_inventory() -> None:
         )
         session.add(viewer)
         session.commit()
-        viewer_id = viewer.id
+
+    def override_user() -> User:
+        """Resolve the viewer without trusting a client-controlled identity header."""
+        with factory() as session:
+            return session.query(User).filter_by(email="viewer@example.invalid").one()
 
     app.dependency_overrides[get_session] = override
+    app.dependency_overrides[get_current_user] = override_user
     try:
         response = TestClient(app).post(
             "/api/v1/inventory",
-            headers={"X-Kombu-User-Id": str(viewer_id)},
             json={"name": "Milk", "quantity": 1, "location": "fridge"},
         )
         assert response.status_code == 403

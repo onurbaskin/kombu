@@ -3,7 +3,7 @@
 from collections.abc import Callable
 from typing import Annotated
 
-from fastapi import Depends, Header, HTTPException, status
+from fastapi import Depends, HTTPException, status
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -44,15 +44,13 @@ def permissions_for(role: UserRole) -> list[str]:
 
 def get_current_user(
     session: SessionDep,
-    x_kombu_user_id: Annotated[int | None, Header()] = None,
 ) -> User:
-    """Resolve a local user, defaulting to the bootstrap administrator."""
-    if x_kombu_user_id is not None:
-        user = session.get(User, x_kombu_user_id)
-    else:
-        user = session.scalar(
-            select(User).where(User.is_active.is_(True)).order_by(User.id)
-        )
+    """Resolve the server-side local administrator until sessions are available."""
+    user = session.scalar(
+        select(User)
+        .where(User.is_active.is_(True), User.role == UserRole.ADMIN)
+        .order_by(User.id)
+    )
     if user is None or not user.is_active:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
