@@ -1,0 +1,84 @@
+replicaCount: 2
+
+imagePullSecrets: []
+
+images:
+  api:
+    repository: ghcr.io/kombu/api
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  ui:
+    repository: ghcr.io/kombu/ui
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+  worker:
+    repository: ghcr.io/kombu/api
+    tag: "0.1.0"
+    pullPolicy: IfNotPresent
+
+api:
+  replicas: 2
+  service:
+    port: 8000
+  resources: {}
+
+ui:
+  replicas: 2
+  service:
+    port: 3000
+  resources: {}
+
+worker:
+  replicas: 2
+  pollSeconds: 5
+  resources: {}
+
+database:
+  url: ""
+
+cache:
+  url: ""
+
+blobStorage:
+  backend: s3
+  endpointUrl: ""
+  bucket: kombu
+  accessKey: ""
+  secretKey: ""
+  root: /app/var/blobs
+
+secrets:
+  existingSecret: ""
+  encryptionKey: ""
+
+config:
+  environment: production
+  logLevel: INFO
+  publicWebUrl: https://kombu.example.com
+  corsOrigins: https://kombu.example.com
+  apiPrefix: /api/v1
+
+persistence:
+  enabled: false
+  existingClaim: ""
+  size: 10Gi
+  storageClassName: ""
+
+ingress:
+  enabled: true
+  className: ""
+  annotations: {}
+  hosts:
+    - host: kombu.example.com
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: api
+        - path: /
+          pathType: Prefix
+          service: ui
+  tls: []
+
+serviceAccount:
+  create: true
+  name: ""

@@ -1,0 +1,43 @@
+# Copy to values.production.yaml and replace every change-me value.
+
+images:
+  api:
+    repository: ghcr.io/your-org/kombu-api
+    tag: v1.0.0
+  ui:
+    repository: ghcr.io/your-org/kombu-ui
+    tag: v1.0.0
+  worker:
+    repository: ghcr.io/your-org/kombu-api
+    tag: v1.0.0
+
+database:
+  url: postgresql+psycopg://kombu:change-me@postgres.example.test:5432/kombu
+
+cache:
+  url: redis://valkey.example.test:6379/0
+
+blobStorage:
+  backend: s3
+  endpointUrl: https://s3.example.test
+  bucket: kombu
+  accessKey: change-me
+  secretKey: change-me
+
+secrets:
+  encryptionKey: change-me-fernet-key
+
+config:
+  publicWebUrl: https://kombu.example.test
+  corsOrigins: https://kombu.example.test
+
+ingress:
+  hosts:
+    - host: kombu.example.test
+      paths:
+        - path: /api
+          pathType: Prefix
+          service: api
+        - path: /
+          pathType: Prefix
+          service: ui

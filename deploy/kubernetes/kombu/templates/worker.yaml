@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "kombu.fullname" . }}-worker
+  labels:
+    {{- include "kombu.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicas }}
+  selector:
+    matchLabels:
+      {{- include "kombu.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      labels:
+        {{- include "kombu.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+    spec:
+      serviceAccountName: {{ include "kombu.serviceAccountName" . }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      containers:
+        - name: worker
+          image: "{{ .Values.images.worker.repository }}:{{ .Values.images.worker.tag }}"
+          imagePullPolicy: {{ .Values.images.worker.pullPolicy }}
+          command: ["uv", "run", "--no-dev", "python", "-m", "api.app.worker"]
+          envFrom:
+            - configMapRef:
+                name: {{ include "kombu.fullname" . }}-config
+            - secretRef:
+                name: {{ include "kombu.secretName" . }}
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+          {{- if .Values.persistence.enabled }}
+          volumeMounts:
+            - name: var
+              mountPath: /app/var
+          {{- end }}
+      {{- if .Values.persistence.enabled }}
+      volumes:
+        - name: var
+          persistentVolumeClaim:
+            claimName: {{ default (printf "%s-var" (include "kombu.fullname" .)) .Values.persistence.existingClaim }}
+      {{- end }}

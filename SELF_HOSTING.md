@@ -48,11 +48,10 @@ environment names, persistent data layout, health checks, and upgrade routine.
 
 ### Kubernetes
 
-Kubernetes is a scale-out surface, not the first-run path. A Helm chart should
-be added after the worker, object-storage, readiness, and migration contracts
-are stable. The chart should support external PostgreSQL and Valkey by default,
-with bundled development dependencies available as optional subcharts or
-examples rather than hidden requirements.
+Kubernetes is a scale-out surface, not the first-run path. The Helm chart under
+`deploy/kubernetes/` uses external PostgreSQL, Valkey, and S3-compatible storage
+by default, with no hidden dependency subcharts. It creates separate API, UI,
+worker, migration Job, Secret, Service, and Ingress resources.
 
 ## Deployment principles
 
@@ -245,8 +244,8 @@ stale-job recovery remains part of the next worker-hardening slice.
 
 ### Slice 5: Kubernetes
 
-- Add Helm chart with API, UI, worker, migration Job, Secret, ConfigMap,
-  Services, Ingress, and persistence options.
+- Validate and harden the Helm chart with API, UI, worker, migration Job,
+  Secret, ConfigMap, Services, Ingress, and persistence options.
 - Document external PostgreSQL, Valkey, and S3-compatible storage.
 - Add upgrade/rollback and backup/restore runbooks.
 

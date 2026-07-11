@@ -5730,6 +5730,28 @@
           "health"
         ]
       }
+    },
+    "/readyz": {
+      "get": {
+        "description": "Return HTTP 503 until the configured database is reachable.",
+        "operationId": "readyz_readyz_get",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ReadinessRead"
+                }
+              }
+            },
+            "description": "Successful Response"
+          }
+        },
+        "summary": "Readyz",
+        "tags": [
+          "health"
+        ]
+      }
     }
   }
 }

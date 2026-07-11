@@ -1,0 +1,11 @@
+apiVersion: v2
+name: kombu
+description: Self-hostable recipe, inventory, shopping, and kitchen automation platform
+type: application
+version: 0.1.0
+appVersion: "0.1.0"
+keywords:
+  - self-hosted
+  - recipes
+  - inventory
+  - kitchen

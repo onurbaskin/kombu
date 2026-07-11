@@ -12,6 +12,15 @@ def test_healthz_returns_ok() -> None:
     assert response.json()["status"] == "ok"
 
 
+def test_readyz_returns_ok() -> None:
+    client = TestClient(app)
+
+    response = client.get("/readyz")
+
+    assert response.status_code == 200
+    assert response.json() == {"status": "ok", "database": "ok"}
+
+
 def test_current_user_uses_safe_placeholder_identity() -> None:
     """The bootstrap user should not expose private project details."""
     client = TestClient(app)

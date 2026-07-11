@@ -9,11 +9,12 @@ and UI are always separate containers.
 | --- | --- | --- | --- |
 | Basic | Demo, individual, household | SQLite and local filesystem | [`compose.basic.yaml`](compose/compose.basic.yaml) |
 | Production | Team, business, single server | PostgreSQL and local filesystem | [`compose.production.yaml`](compose/compose.production.yaml) |
-| Scale-out | Multiple replicas, Compose rehearsal | PostgreSQL, Valkey, S3-compatible storage | [`compose.scale-out.yaml`](compose/compose.scale-out.yaml) |
+| Scale-out | Multiple replicas, Compose or Kubernetes | PostgreSQL, Valkey, S3-compatible storage | [`compose.scale-out.yaml`](compose/compose.scale-out.yaml), [`kubernetes/`](kubernetes/) |
 
-The Basic, Production, and Scale-out Compose files are currently the reference
-delivery surfaces. Rootless Podman Quadlet parity is maintained under
-`deploy/podman/`; Kubernetes packaging remains a later delivery surface.
+The Basic, Production, and Scale-out Compose files are the low-friction
+reference surfaces. Rootless Podman Quadlet parity is maintained under
+`deploy/podman/`, and the Helm chart under `deploy/kubernetes/` is the
+scale-out orchestrator surface.
 
 ## Basic Compose
 

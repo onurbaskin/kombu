@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "kombu.fullname" . }}-config
+  labels:
+    {{- include "kombu.labels" . | nindent 4 }}
+data:
+  KOMBU_ENVIRONMENT: {{ .Values.config.environment | quote }}
+  KOMBU_LOG_LEVEL: {{ .Values.config.logLevel | quote }}
+  KOMBU_API_PREFIX: {{ .Values.config.apiPrefix | quote }}
+  KOMBU_PUBLIC_WEB_URL: {{ .Values.config.publicWebUrl | quote }}
+  KOMBU_CORS_ORIGINS: {{ .Values.config.corsOrigins | quote }}
+  KOMBU_BLOB_STORAGE_BACKEND: {{ .Values.blobStorage.backend | quote }}
+  KOMBU_BLOB_STORAGE_ROOT: {{ .Values.blobStorage.root | quote }}
+  KOMBU_WORKER_POLL_SECONDS: {{ .Values.worker.pollSeconds | quote }}

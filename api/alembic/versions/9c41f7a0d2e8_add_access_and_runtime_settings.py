@@ -71,7 +71,7 @@ def upgrade() -> None:
     op.execute("UPDATE users SET role = 'editor' WHERE role = 'member'")
     op.execute(
         "INSERT INTO users (email, display_name, role, is_active) "
-        "SELECT 'admin@example.invalid', 'Local Administrator', 'admin', 1 "
+        "SELECT 'admin@example.invalid', 'Local Administrator', 'admin', TRUE "
         "WHERE NOT EXISTS (SELECT 1 FROM users)"
     )
 

@@ -9,6 +9,7 @@ from typing import Protocol
 
 import boto3
 from botocore.client import BaseClient
+from botocore.config import Config
 
 from api.app.config import Settings, get_settings
 
@@ -85,6 +86,7 @@ class S3BlobStore:
             aws_access_key_id=settings.s3_access_key,
             aws_secret_access_key=settings.s3_secret_key,
             region_name="us-east-1",
+            config=Config(s3={"addressing_style": "path"}),
         )
 
     def put(self, key: str, content: bytes, content_type: str) -> None:
